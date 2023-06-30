@@ -1,5 +1,31 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+/Bot/venv*
+/Bot/.venv
+/Bot/build
+/Bot/dump
+/Bot/dist
+/Bot/gramaddict.egg-info
+/Bot/.idea
+/Bot/test
+/Bot/.vscode
+*/*.yml
+*/*.json
+*.pyc
+/Bot/.DS_Store
+Bot/crashes
+Bot/accounts
+Bot/!config-examples/*
+Bot/Pipfile
+Bot/Pipfile.lock
+*.pdf
+*.txt
+*.mp4
+*.log*
+*.ini
+*.db
+
+
 # dependencies
 /node_modules
 /.pnp

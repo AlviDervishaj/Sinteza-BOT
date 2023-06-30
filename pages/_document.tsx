@@ -1,17 +1,15 @@
 import { Head, Html, Main, NextScript } from 'next/document'
-import { getCssText } from '../stitches.config'
 
 export default function MyDocument() {
   return (
     <Html lang="en">
       <Head>
-        <style
-          id="stitches"
-          dangerouslySetInnerHTML={{ __html: getCssText() }}
-        />
+        <meta charSet="utf-8" />
+        <meta name="description" content="Sinteza Description"/>
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </Head>
       <body>
-        <Main />
+        <Main/>
         <NextScript />
       </body>
     </Html>

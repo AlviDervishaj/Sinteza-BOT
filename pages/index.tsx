@@ -1,53 +1,40 @@
-import Head from 'next/head'
-import StitchesLogo from '../components/StitchesLogo'
-import { styled } from '../stitches.config'
+import Head from 'next/head';
+import {useState, useCallback} from "react";
+import {UsernameInput} from "../components/UsernameInput";
 
-const Box = styled('div', {})
+type Process = undefined;
 
-const Text = styled('p', {
-  fontFamily: '$system',
-  color: '$hiContrast',
-})
-
-const Link = styled('a', {
-  fontFamily: '$system',
-  textDecoration: 'none',
-  color: '$purple600',
-})
-
-const Container = styled('div', {
-  marginX: 'auto',
-  paddingX: '$3',
-
-  variants: {
-    size: {
-      1: {
-        maxWidth: '300px',
-      },
-      2: {
-        maxWidth: '585px',
-      },
-      3: {
-        maxWidth: '865px',
-      },
-    },
-  },
-})
-
-export default function Home() {
+export default function Home({processes}) {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [response, setResponse] = useState<Response>(null);
+  console.log({processes});
   return (
-    <Box css={{ paddingY: '$6' }}>
-      <Head>
-        <title>Use Stitches with Next.js</title>
-      </Head>
-      <Container size={{ '@initial': '1', '@bp1': '2' }}>
-        <StitchesLogo />
-        <Text as="h1">Hello, from Stitches.</Text>
-        <Text>
-          For full documentation, visit{' '}
-          <Link href="https://stitches.dev">stitches.dev</Link>.
-        </Text>
-      </Container>
-    </Box>
+    <>
+    <Head>
+        <title>Sinteza</title>
+    </Head>
+    <main className="px-4 py-6">
+      <main className="container mx-auto space-y-4">
+        <h1 className="text-2xl">Sinteza Automation Bot</h1>
+        <p className="text-lg">
+          Enter username below and then press the button to start the bot
+        </p>
+        <UsernameInput/>
+      </main>
+    </main>
+    </>
   )
+}
+
+
+export async function getStaticProps() {
+  const condition = process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "https://sinteza.vercel.app/";
+  const result = await fetch(`${condition}api/fetchProcesses`);
+  const data = await result.text();
+  return {
+    props: {
+      processes: data,
+    },
+    revalidate: 15,
+  }
 }

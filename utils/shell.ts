@@ -15,13 +15,16 @@ export function transferChildProcessOutput(
     res.write(chunkString.split('\n')
       .map((line: string) => line)
       .join('\n'))
-  })
+  });
 
   res.writeHead(200, {
     'Content-Type': 'text/plain',
     'Cache-Control': 'no-cache',
     'Content-Encoding': 'none'
-  })
+  });
+
+  // get pid of spawned cmd
+  const pid = cmd.pid;
 
   cmd.stdout.pipe(res);
 }

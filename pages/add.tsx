@@ -1,18 +1,11 @@
 import Head from "next/head";
 import Image from "next/image";
-import {
-  useState,
-  useEffect,
-  SetStateAction,
-  Dispatch,
-  useCallback,
-} from "react";
+import { useState, useEffect, SetStateAction, Dispatch } from "react";
 
 // Components
 import { BotForm } from "../components/BotForm";
 import { NextPage } from "next";
-import { Process, ProcessesPool } from "../utils/Process";
-import { Tabs } from "../components/Tabs";
+import { Process } from "../utils/Process";
 
 type Props = {
   setError: (error: string) => void;
@@ -23,10 +16,11 @@ type Props = {
   logData: (data: string) => void;
   setDevices: Dispatch<SetStateAction<string[]>>;
   devices: string[];
-  processes: ProcessesPool;
+  processes: Process[];
   setProcesses: Dispatch<SetStateAction<Process[]>>;
   displayError: (error: string) => void;
   handleScroll: () => void;
+  addToPool: (process: Process) => void;
 };
 const AddBot: NextPage<Props> = ({
   setData,
@@ -38,6 +32,7 @@ const AddBot: NextPage<Props> = ({
   processes,
   setDevices,
   devices,
+  addToPool,
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   // const renderTabs = useCallback(() => {
@@ -80,6 +75,7 @@ const AddBot: NextPage<Props> = ({
             processes={processes}
             setDevices={setDevices}
             devices={devices}
+            addToPool={addToPool}
             getDevices={getDevices}
           />
         </section>

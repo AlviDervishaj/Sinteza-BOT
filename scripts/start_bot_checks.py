@@ -62,6 +62,8 @@ def change_keys_in_config(username):
 
     for config in customConfig:
         if config in data:
+            if (data[config] == customConfig[config]):
+                _print(f"[INFO] {config.capitalize()} : DEFAULT")
             if type(customConfig[config]) == list:
                 if customConfig[config] != []:
                     _print(

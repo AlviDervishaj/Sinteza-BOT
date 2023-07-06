@@ -1,11 +1,11 @@
 import Head from "next/head";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, Dispatch, SetStateAction } from "react";
 type Props = {
   devices: string[];
   device: string;
   getDevices: () => void;
-  setDevice: React.Dispatch<React.SetStateAction<string>>;
+  setDevice: Dispatch<SetStateAction<string>>;
 };
 export default function Home({}: Props) {
   const [isLoading, setIsLoading] = useState<boolean>(true);

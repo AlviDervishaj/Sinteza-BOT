@@ -16,6 +16,9 @@ module.exports = {
         ...mauve,
         ...violet,
       },
+      width: {
+        processTab: "calc(100vw - 16rem)",
+      },
       fontFamily: {
         sans: ["Inter var", ...defaultTheme.fontFamily.sans],
       },

@@ -1,6 +1,6 @@
-import { FC, useState, useCallback, useEffect, useRef } from "react";
+import { FC, useState, useEffect } from "react";
 import type { Dispatch, MouseEvent, SetStateAction } from "react";
-import { Process, ProcessesPool } from "../utils/Process";
+import { Process } from "../utils/Process";
 import { BotFormData } from "../utils/Types";
 import { start_bot, start_bot_checks } from "../utils/api-client";
 
@@ -13,7 +13,8 @@ type Props = {
   handleScroll: () => void;
   setDevices: Dispatch<SetStateAction<string[]>>;
   devices: string[];
-  processes: ProcessesPool;
+  processes: Process[];
+  addToPool: (process: Process) => void;
 };
 
 export const BotForm: FC<Props> = ({
@@ -24,6 +25,7 @@ export const BotForm: FC<Props> = ({
   logData,
   handleScroll,
   processes,
+  addToPool,
 }) => {
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
@@ -38,7 +40,7 @@ export const BotForm: FC<Props> = ({
     "hashtag-likers-top": [],
     "unfollow-non-followers": "",
     "unfollow-skip-limit": "",
-    "working-hours": ["10.15-16.4", "18.15 - 22.46"],
+    "working-hours": [],
   });
   useEffect(() => {
     getDevices();
@@ -49,9 +51,7 @@ export const BotForm: FC<Props> = ({
   const killProcess = async (event: MouseEvent) => {
     event.preventDefault();
     console.log(
-      processes && processes.processes.length != 0
-        ? processes.processes[0].device
-        : "No processes"
+      processes && processes.length != 0 ? processes[0].device : "No processes"
     );
     setIsTerminating(false);
     return;
@@ -124,7 +124,7 @@ export const BotForm: FC<Props> = ({
     await startBotChecks();
     logData("[INFO] Starting bot...");
     start_bot(formData, (output: string) => {
-      processes.addToPool(
+      addToPool(
         new Process(
           formData.device,
           formData.username,

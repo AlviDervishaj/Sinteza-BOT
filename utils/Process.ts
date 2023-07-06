@@ -77,29 +77,29 @@ export class ProcessesPool {
   }
 
   // remove a process based on device
-  removeProcessByDevice(device: string): void {
+  removeProcessByDevice(device: string): Process[] {
     const index = this._processes.findIndex(process => process.device === device);
     if (index > -1) {
       this._processes.splice(index, 1);
     }
-    return;
+    return this._processes;;
   }
   // remove process
-  removeProcess(process: Process): void {
+  removeProcess(process: Process): Process[] {
     const index = this._processes.indexOf(process);
     if (index > -1) {
       this._processes.splice(index, 1);
     }
-    return;
+    return this._processes;
   }
 
   // remove a process by useranme and device
-  removeProcessByUsernameAndDevice(username: string, device: string): void {
+  removeProcessByUsernameAndDevice(username: string, device: string): Process[] {
     const index = this._processes.findIndex(process => process.device === device && process.username === username);
     if (index > -1) {
       this._processes.splice(index, 1);
     }
-    return;
+    return this._processes;
   }
 
   // remove last inserted

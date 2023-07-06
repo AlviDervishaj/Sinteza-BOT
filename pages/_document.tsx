@@ -4,12 +4,10 @@ export default function MyDocument() {
   return (
     <Html lang="en">
       <Head>
-        <meta charSet="utf-8" />
-        <meta name="description" content="Sinteza Description"/>
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </Head>
       <body>
-        <Main/>
+        <Main />
         <NextScript />
       </body>
     </Html>

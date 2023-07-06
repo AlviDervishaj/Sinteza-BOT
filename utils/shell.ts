@@ -1,10 +1,11 @@
-import { ChildProcessWithoutNullStreams } from "child_process";
+import { ChildProcessWithoutNullStreams } from "node:child_process";
 import { NextApiResponse } from "next";
 
 export function transferChildProcessOutput(
   cmd: ChildProcessWithoutNullStreams,
-  res: NextApiResponse
-){
+  res: NextApiResponse,
+) {
+
   cmd.on('close', (code: number | null) => {
     console.log('[INFO] FINISHED.\nCODE : ', code)
   });

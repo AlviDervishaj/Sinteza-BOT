@@ -5,15 +5,15 @@ import { transferChildProcessOutput } from '../../utils/shell';
 import { log } from 'console';
 
 export default function GET(req: NextApiRequest, res: NextApiResponse) {
-  const username: string | null = req.query.username;
-  if (!username) {
-    log(`[INFO] Getting all bots ...`);
-    const cmd = exec("ps -aux | egrep 'python3 start_bot.py'");
-    transferChildProcessOutput(cmd, res);
-  }
-  else {
-    log(`[INFO] Getting ${username} bot ...`);
-    const cmd = exec(`ps -aux | egrep 'python3 start_bot.py ${username}'`);
-    transferChildProcessOutput(cmd, res);
-  }
+    const username: string = req.query.username as string;
+    if (!username) {
+        log(`[INFO] Getting all bots ...`);
+        const cmd = spawn("ps -aux | egrep 'python3 start_bot.py'", { shell: true });
+        transferChildProcessOutput(cmd, res);
+    }
+    else {
+        log(`[INFO] Getting ${username} bot ...`);
+        const cmd = spawn(`ps -aux | egrep 'python3 start_bot.py ${username}'`, { shell: true });
+        transferChildProcessOutput(cmd, res);
+    }
 }

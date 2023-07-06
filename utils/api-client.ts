@@ -1,25 +1,91 @@
+import { BotFormData } from "./Types";
+
 type ProgressCallback = (output: string) => void;
 
-export const start_bot = async (
-  username: string,
+const condition =
+  process.env.NODE_ENV === "development"
+    ? "http://localhost:3000/"
+    : "https://sinteza.vercel.app/";
+
+// Start bot checks and stream output
+export const start_bot_checks = async (
+  botData: BotFormData,
   onProgress: ProgressCallback
 ): Promise<string | false> => {
-  const response: Response = await fetch(
-    `/api/start_bot_checks?${new URLSearchParams({username: username})}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8'
-      },
-    }
+  const response: Response = await fetch(`${condition}api/start_bot_checks`, {
+    method: "POST",
+    cache: "no-cache",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(botData),
+  }
   )
   const reader = response.body?.getReader();
-  if(reader) {
+  if (reader) {
     const result = await streamResponse(reader, onProgress);
     return result.split('\n').filter((line) => {
       return !line.startsWith('[Error]')
     }).join('\n')
   }
   else return false;
+}
+// Start bot and stream output
+export const start_bot = async (
+  botData: BotFormData,
+  onProgress: ProgressCallback
+): Promise<string | false> => {
+  const response: Response = await fetch(
+    `${condition}api/start_bot`, {
+    method: "POST",
+    cache: "no-cache",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(botData),
+  });
+
+  const reader = response.body?.getReader();
+  if (reader) {
+    const result = await streamResponse(reader, onProgress);
+    return result.split('\n').filter((line) => {
+      return !line.startsWith('[Error]')
+    }).join('\n')
+  }
+  else return false;
+}
+
+export const readFromFile = async (device: string, onProgress: ProgressCallback) => {
+  const response: Response = await fetch(
+    `${condition}api/read_from_file`, {
+    method: "POST",
+    cache: "no-cache",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ device }),
+  });
+  const reader = response.body?.getReader();
+  if (reader) {
+    const result = await streamResponse(reader, onProgress);
+    return result.split('\n').filter((line) => {
+      return !line.startsWith('[Error]')
+    }).join('\n')
+  }
+}
+
+export const writeToFile = async ({ text, device }: { text: string, device: string }) => {
+  const response: Response = await fetch(
+    `${condition}api/write_to_file`, {
+    method: "POST",
+    cache: "no-cache",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text, device }),
+  });
+  const data: { info: string, error?: string, code: number } = await response.json();
+  return data;
 }
 
 // Stream response chunk by chunk

@@ -1,40 +1,47 @@
-import Head from 'next/head';
-import {useState, useCallback} from "react";
-import {UsernameInput} from "../components/UsernameInput";
-
-type Process = undefined;
-
-export default function Home({processes}) {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [response, setResponse] = useState<Response>(null);
-  console.log({processes});
+import Head from "next/head";
+import Image from "next/image";
+import { useState, useEffect, useCallback } from "react";
+type Props = {
+  devices: string[];
+  device: string;
+  getDevices: () => void;
+  setDevice: React.Dispatch<React.SetStateAction<string>>;
+};
+export default function Home({}: Props) {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+  if (isLoading)
+    return (
+      <main className="relative w-screen h-screen grid place-items-center">
+        <Image
+          src="/rotate-right.svg"
+          priority
+          className="animate-spin"
+          width={50}
+          height={50}
+          alt="Loading"
+        />
+      </main>
+    );
   return (
     <>
-    <Head>
+      <Head>
+        <meta charSet="utf-8" />
+        <meta name="description" content="Sinteza Description" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Sinteza</title>
-    </Head>
-    <main className="px-4 py-6">
-      <main className="container mx-auto space-y-4">
-        <h1 className="text-2xl">Sinteza Automation Bot</h1>
-        <p className="text-lg">
-          Enter username below and then press the button to start the bot
-        </p>
-        <UsernameInput/>
+      </Head>
+      <main className="px-4 py-6 overflow-hidden">
+        <section className="container mx-auto space-y-4">
+          <header className="w-full space-y-4">
+            <h1 className="text-4xl text-center">Sinteza Automation Bot</h1>
+          </header>
+        </section>
       </main>
-    </main>
     </>
-  )
-}
-
-
-export async function getStaticProps() {
-  const condition = process.env.NODE_ENV === "development" ? "http://localhost:3000/" : "https://sinteza.vercel.app/";
-  const result = await fetch(`${condition}api/fetchProcesses`);
-  const data = await result.text();
-  return {
-    props: {
-      processes: data,
-    },
-    revalidate: 15,
-  }
+  );
 }

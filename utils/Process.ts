@@ -1,60 +1,79 @@
-export type ProcessProps = {
-  device: string,
-  user: {
+export type ProcessSkeleton = {
+  _device: string,
+  _result: string,
+  _user: {
     username: string,
     membership: "PREMIUM" | "FREE",
   },
-  status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED",
-  result: string,
-};
-
-
+  _status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED",
+}
 export class Process {
-  private _process: ProcessProps;
+  private _device: string;
+  private _result: string;
+  private _user: {
+    username: string,
+    membership: "PREMIUM" | "FREE",
+  };
+  private _status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED";
+
+
 
   constructor(device: string, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string) {
-    this._process = {
-      device, user: { username, membership }, status, result
+    this._user = {
+      username,
+      membership
     }
+    this._device = device;
+    this._status = status;
+    this._result = result;
   }
 
   get device() {
-    return this._process.device;
+    return this._device;
   }
   set device(device: string) {
-    this._process.device = device;
+    this._device = device;
+    return;
+  }
+
+  get user() {
+    return this._user;
+  }
+  set user(user: { username: string, membership: "PREMIUM" | "FREE" }) {
+    this._user = user;
     return;
   }
 
   get username() {
-    return this._process.user.username;
+    return this._user.username;
   }
   set username(username: string) {
-    this._process.user.username = username;
+    this._user.username = username;
     return;
   }
+
   get membership() {
-    return this._process.user.membership;
+    return this._user.membership;
   }
   set membership(membership: "PREMIUM" | "FREE") {
-    this._process.user.membership = membership;
+    this._user.membership = membership;
     return;
   }
 
 
   get status() {
-    return this._process.status;
+    return this._status;
   }
   set status(status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED") {
-    this._process.status = status;
+    this._status = status;
     return;
   }
 
   get result() {
-    return this._process.result;
+    return this._result;
   }
   set result(result: string) {
-    this._process.result = result;
+    this._result = result;
     return;
   }
 }

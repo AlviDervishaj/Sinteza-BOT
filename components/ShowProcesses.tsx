@@ -1,15 +1,27 @@
 import { FC } from "react";
 
-import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "./Radix";
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "./Radix/Tabs";
 import type { Process } from "../utils/Process";
 import Image from "next/image";
+import { Toast } from "./Radix";
 
 type Props = {
   processes: Process[];
   removeProcess: (process: Process) => void;
+  noProcessesText: string;
+  text: string;
+  addPreviousProcess: (process: Process) => void;
+  removePreviousProcess: (process: Process) => void;
 };
 
-export const ShowProcesses: FC<Props> = ({ processes, removeProcess }) => {
+export const ShowProcesses: FC<Props> = ({
+  processes,
+  removeProcess,
+  noProcessesText,
+  addPreviousProcess,
+  removePreviousProcess,
+  text,
+}) => {
   const condition =
     process.env.NODE_ENV === "development"
       ? "http://localhost:3000/"
@@ -39,8 +51,11 @@ export const ShowProcesses: FC<Props> = ({ processes, removeProcess }) => {
     // remove all elements except the last one.
     const command = _processes[0];
     // get pid of command
-    const pid = command.split(" ")[1];
-    const kp = await fetch(
+    const pid = command
+      .split(" ")
+      .filter((elem) => elem.trim() !== "")[1]
+      .trim();
+    await fetch(
       `${condition}api/terminateProcess?${new URLSearchParams({ pid })}`,
       {
         method: "GET",
@@ -52,19 +67,19 @@ export const ShowProcesses: FC<Props> = ({ processes, removeProcess }) => {
     proc.status = "STOPPED";
     // remove process
     removeProcess(proc);
+    // add it to previous processes
+    addPreviousProcess(proc);
   };
   if (!processes || processes.length === 0) {
     return (
       <div className="w-fit h-fit mx-auto py-6">
-        <h2 className="text-xl tracking-wide">
-          No processes are currently running
-        </h2>
+        <h2 className="text-xl tracking-wide">{noProcessesText}</h2>
       </div>
     );
   }
   return (
     <section className="w-fit h-fit mx-auto py-6">
-      <h2>Select From available processes</h2>
+      <h2 className="text-2xl tracking-wide py-4">{text}</h2>
       <div className="w-full flex flex-col">
         <TabsRoot
           className="w-processTab max-w-none"
@@ -85,19 +100,31 @@ export const ShowProcesses: FC<Props> = ({ processes, removeProcess }) => {
             <TabsContent
               value={process.username}
               key={`${process} ${index}`}
-              className="bg-slate-400 w-full relative p-3"
+              className="bg-slate-400 w-full relative p-3 rounded-b-md"
             >
               <pre className="py-1">Device {process.device}</pre>
               <pre className="py-1">Username {process.username}</pre>
               <pre className="py-1">Membership {process.membership}</pre>
               <pre className="py-1">Status {process.status}</pre>
               <pre className="pt-1 pb-8">{process.result}</pre>
-              <button
-                onClick={(event) => killBot(event, process)}
-                className="border border-red-500 bg-red-400 hover:bg-red-500 rounded-md w-fit h-fit cursor-pointer p-4"
-              >
-                <Image src={"/knife.png"} alt="Knife" width={32} height={32} />
-              </button>
+              {process.status !== "STOPPED" ? (
+                <button
+                  onClick={(event) => killBot(event, process)}
+                  className="border border-red-500 bg-red-400 hover:bg-red-500 rounded-md w-fit h-fit cursor-pointer p-4"
+                >
+                  <Image
+                    src={"/knife.png"}
+                    alt="Knife"
+                    width={32}
+                    height={32}
+                  />
+                </button>
+              ) : (
+                <Toast
+                  process={process}
+                  removePreviousProcess={removePreviousProcess}
+                />
+              )}
             </TabsContent>
           ))}
         </TabsRoot>

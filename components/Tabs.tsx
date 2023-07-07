@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "./Radix";
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "./Radix/Tabs";
 
 type Props = {
   devices: string[];

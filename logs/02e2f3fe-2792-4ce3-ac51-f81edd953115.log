@@ -1,7 +1,0 @@
-[06/29 15:47:19]    DEBUG | Initial log file: logs/02e2f3fe-2792-4ce3-ac51-f81edd953115.log (log.py:100)
-[06/29 15:47:19]     INFO | It's strongly recommend to use a config.yml file. Follow these links for more details: https://docs.gramaddict.org/#/configuration and https://github.com/GramAddict/bot/tree/master/config-examples (bot_flow.py:63)
-[06/29 15:47:23]    DEBUG | Installed via pip. (utils.py:140)
-[06/29 15:47:23]     INFO | Do you want to update/create your config-examples folder in local? Do the following: 
-				pip3 install --user gitdir (only the first time)
-				python3 -m gitdir https://github.com/GramAddict/bot/tree/master/config-examples (python on Windows) (utils.py:141)
-[06/29 15:47:26]     INFO | Checking for updates... (utils.py:63)

@@ -21,6 +21,8 @@ type Props = {
   displayError: (error: string) => void;
   handleScroll: () => void;
   addToPool: (process: Process) => void;
+  killBot: (process: Process) => void;
+  updateProcessResult: (process: Process, output: string) => void;
 };
 const AddBot: NextPage<Props> = ({
   setData,
@@ -33,6 +35,8 @@ const AddBot: NextPage<Props> = ({
   setDevices,
   devices,
   addToPool,
+  updateProcessResult,
+  killBot,
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   // const renderTabs = useCallback(() => {
@@ -64,17 +68,19 @@ const AddBot: NextPage<Props> = ({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Sinteza Add Bot</title>
       </Head>
-      <main className="px-4 py-6 overflow-hidden">
+      <main className="px-4 py-6 overflow-x-hidden">
         <section className="container mx-auto space-y-4">
           <BotForm
             setData={setData}
             logData={logData}
+            updateProcessResult={updateProcessResult}
             displayError={displayError}
             setError={setError}
             handleScroll={handleScroll}
             processes={processes}
             setDevices={setDevices}
             devices={devices}
+            killBot={killBot}
             addToPool={addToPool}
             getDevices={getDevices}
           />

@@ -1,3 +1,5 @@
+import { Session } from "./Types";
+
 export type ProcessSkeleton = {
   _device: string,
   _result: string,
@@ -6,10 +8,19 @@ export type ProcessSkeleton = {
     membership: "PREMIUM" | "FREE",
   },
   _status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED",
+  _total: Session[];
+  _following: number;
+  _followers: number;
+  _session: string;
+
 }
 export class Process {
   private _device: string;
   private _result: string;
+  private _total: Session[];
+  private _followers: number;
+  private _following: number;
+  private _session: string;
   private _user: {
     username: string,
     membership: "PREMIUM" | "FREE",
@@ -18,7 +29,7 @@ export class Process {
 
 
 
-  constructor(device: string, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string) {
+  constructor(device: string, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string, total: Session[], following: number, followers: number, session: string = "") {
     this._user = {
       username,
       membership
@@ -26,6 +37,10 @@ export class Process {
     this._device = device;
     this._status = status;
     this._result = result;
+    this._total = total;
+    this._followers = followers;
+    this._following = following;
+    this._session = session;
   }
 
   get device() {
@@ -36,6 +51,37 @@ export class Process {
     return;
   }
 
+  get session() {
+    return this._session;
+  }
+  set session(session: string) {
+    this._session = session;
+    return;
+  }
+
+  get following() {
+    return this._following;
+  }
+  set following(following: number) {
+    this._following = following;
+    return;
+  }
+
+  get followers() {
+    return this._followers;
+  }
+  set followers(followers: number) {
+    this._followers = followers;
+    return;
+  }
+
+  get total() {
+    return this._total;
+  }
+  set total(total: Session[]) {
+    this._total = total;
+    return;
+  }
   get user() {
     return this._user;
   }
@@ -175,89 +221,3 @@ export class ProcessesPool {
   }
 
 }
-
-//   removeLastInsertedProcess() {
-//     this._processes[this._processes.length - 1].cmd.kill("SIGINT");
-//     const status = this._processes[this._processes.length - 1].cmd.killed;
-//     this._processes.pop();
-//     return status;
-//   }
-
-//   addToBeginningOfPool(process: Process) {
-//     this._processes.unshift(process);
-//     return;
-//   }
-
-//   removeFirstInsertedProcess() {
-//     this._processes.shift();
-//     return;
-//   }
-//   // find process by device
-//   findOneProcessByDevice(device: string) {
-//     return this._processes.find(process => process.config.device === device);
-//   }
-
-//   // find multiple processes by device
-//   findMultipleProcessesByDevice(device: string) {
-//     return this._processes.filter(process => process.config.device === device);
-//   }
-
-//   // find process by username
-//   findOneProcessByUsername(username: string) {
-//     console.log(this._processes);
-//     return this._processes.find(process => process.config.username === username);
-//   }
-
-//   // find multiple processes by username
-//   findMultipleProcessesByUsername(username: string) {
-//     return this._processes.filter(process => process.config.username === username);
-//   }
-
-//   // find multiple processes by cmd
-//   findMultipleProcessesByCmd(cmd: ChildProcessWithoutNullStreams) {
-//     return this._processes.filter(process => process.cmd === cmd);
-//   }
-
-//   // find process by cmd
-//   findOneProcessByCmd(cmd: ChildProcessWithoutNullStreams) {
-//     return this._processes.find(process => process.cmd === cmd);
-//   }
-
-//   removeFromPool(process: Process) {
-//     process.cmd.kill("SIGINT");
-//     const index = this._processes.indexOf(process);
-//     if (index > -1) {
-//       this._processes.splice(index, 1)
-//     }
-//     else return index;
-//   }
-
-// }
-
-// export class Process {
-//   private _cmd: ChildProcessWithoutNullStreams;
-//   private _config: BotFormData;
-
-
-//   constructor(cmd: ChildProcessWithoutNullStreams, _config: BotFormData) {
-//     this._cmd = cmd;
-//     this._config = _config;
-//   }
-
-//   get config() {
-//     return this._config;
-//   }
-//   set config(newConfig: BotFormData) {
-//     this._config = newConfig;
-//     return;
-//   }
-
-//   get cmd() {
-//     return this._cmd;
-//   }
-
-// }
-
-
-// export const ProcessesPool = new ProcessPool();
-

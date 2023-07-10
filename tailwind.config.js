@@ -25,7 +25,29 @@ module.exports = {
       height: {
         outputBox: "32rem",
       },
+      animation: {
+        slideDown: "slideDown 300ms ease-out",
+        slideUp: "slideUp 300ms ease-out",
+      },
+      keyframes: {
+        slideDown: {
+          from: {
+            height: 0,
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
+        },
+        slideUp: {
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: 0,
+          },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [require("tailwind-scrollbar")({ nocompatible: true })],
 };

@@ -23,8 +23,5 @@ export function transferChildProcessOutput(
     'Content-Encoding': 'none'
   });
 
-  // get pid of spawned cmd
-  const pid = cmd.pid;
-
   cmd.stdout.pipe(res);
 }

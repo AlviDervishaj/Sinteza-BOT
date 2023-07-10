@@ -15,6 +15,8 @@ type Props = {
   devices: string[];
   processes: Process[];
   addToPool: (process: Process) => void;
+  killBot: (event: any, process: Process) => void;
+  updateProcessResult: (process: Process, result: string) => void;
 };
 
 export const BotForm: FC<Props> = ({
@@ -25,16 +27,17 @@ export const BotForm: FC<Props> = ({
   logData,
   handleScroll,
   processes,
+  killBot,
   addToPool,
+  updateProcessResult,
 }) => {
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
-  const [isTerminating, setIsTerminating] = useState<boolean>(false);
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
     device: "",
     password: "",
-    "speed-multiplier": -1,
+    "speed-multiplier": 1,
     "truncate-sources": "",
     "blogger-followers": [],
     "hashtag-likers-top": [],
@@ -48,14 +51,6 @@ export const BotForm: FC<Props> = ({
       setDevices([]);
     };
   }, []);
-  const killProcess = async (event: MouseEvent) => {
-    event.preventDefault();
-    console.log(
-      processes && processes.length != 0 ? processes[0].device : "No processes"
-    );
-    setIsTerminating(false);
-    return;
-  };
   const checkFormData = () => {
     if (!formData.username || formData.username.trim() === "") {
       return setError("Please enter a username.");
@@ -120,26 +115,23 @@ export const BotForm: FC<Props> = ({
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;
     setAlreadyCalled(true);
-    logData("[INFO] Starting bot checks...");
+    logData("[INFO] Starting bot checks... ");
     await startBotChecks();
     logData("[INFO] Starting bot...");
+    const p = new Process(
+      formData.device,
+      formData.username,
+      membership,
+      "RUNNING",
+      "",
+      []
+    );
     start_bot(formData, (output: string) => {
-      addToPool(
-        new Process(
-          formData.device,
-          formData.username,
-          membership,
-          "RUNNING",
-          output
-        )
-      );
-      logData(output);
+      updateProcessResult(p, output);
+      addToPool(p);
     });
     setAlreadyCalled(false);
-    // const data = await result.text();
-    // console.log({ data });
     handleScroll();
-    // logData(data);
   };
   return (
     <>
@@ -430,8 +422,16 @@ export const BotForm: FC<Props> = ({
           Refresh Devices
         </button>
         <button
-          disabled={isTerminating}
-          onClick={(event) => killProcess(event)}
+          onClick={(event) =>
+            killBot(
+              event,
+              processes.filter(
+                (p) =>
+                  p.device === formData.device &&
+                  p.username === formData.username
+              )[0]
+            )
+          }
           type="button"
           className="w-fit h-fit py-1 px-2 lg:px-4 lg:py-2 disabled:border-red-600 disabled:hover:bg-transparent border border-solid border-red-400 rounded-lg hover:bg-red-500 hover:text-slate-100 text-base lg:text-xl"
         >

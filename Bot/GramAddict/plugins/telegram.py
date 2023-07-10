@@ -72,7 +72,8 @@ class TelegramReports(Plugin):
                 return response.json()
 
         if username is None:
-            logger.error("You have to specify an username for getting reports!")
+            logger.error(
+                "You have to specify an username for getting reports!")
             return None
         with open(f"accounts/{username}/sessions.json") as json_data:
             activity = json.load(json_data)
@@ -156,9 +157,11 @@ class TelegramReports(Plugin):
             logger.info(
                 "First day of botting eh? Stats for the first day are meh because we don't have enough data to track how many followers you earned today from the bot activity."
             )
-            dailySummary["followers_gained"] = dailySummary["followers"].astype(int)
+            dailySummary["followers_gained"] = dailySummary["followers"].astype(
+                int)
         dailySummary.dropna(inplace=True)
-        dailySummary["followers_gained"] = dailySummary["followers_gained"].astype(int)
+        dailySummary["followers_gained"] = dailySummary["followers_gained"].astype(
+            int)
         dailySummary["duration"] = dailySummary["duration"].astype(int)
         numFollowers = int(dailySummary["followers"].iloc[-1])
         n = 1
@@ -219,7 +222,8 @@ class TelegramReports(Plugin):
                 • {str(int(dailySummary["duration"].tail(7).mean()))} minutes of botting
             """
         try:
-            r = telegram_bot_sendtext(f"{undentString(statString)}\n\n{timeString}")
+            r = telegram_bot_sendtext(
+                f"{undentString(statString)}\n\n{timeString}")
             if r.get("ok"):
                 logger.info(
                     "Telegram message sent successfully.",

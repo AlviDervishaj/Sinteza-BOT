@@ -1,11 +1,18 @@
 import "./global.css";
-import { useCallback, useEffect, useRef, useState } from "react";
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
+
+import { useEffect, useRef, useState } from "react";
 import type { AppProps } from "next/app";
 import { Navigation } from "../components/Navigation";
 import { Process, ProcessSkeleton } from "../utils/Process";
 import { Output } from "../components/Output";
 import { NextRouter, useRouter } from "next/router";
 import { ShowProcesses } from "../components/ShowProcesses";
+import { GetSessionFromPython } from "../utils/Types";
+import axios from "axios";
 
 export default function Sinteza({ Component, pageProps }: AppProps) {
   const router: NextRouter = useRouter();
@@ -16,6 +23,70 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const [device, setDevice] = useState<string>("");
   const [processes, setProcesses] = useState<Process[]>([]);
   const [previousProcesses, setPreviousProcesses] = useState<Process[]>([]);
+
+  const condition =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:3000/"
+      : "https://sinteza.vercel.app/";
+
+  const killBot = async (event: any, proc: Process) => {
+    event.preventDefault();
+    // call terminateProcess
+    const result = await fetch(
+      `${condition}api/fetchProcesses?${new URLSearchParams({
+        username: proc.username,
+      })}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+      }
+    );
+    const data = await result.text();
+    const _processes = data.split("\n").map((p) =>
+      p
+        .split("   ")
+        .filter((s) => s.length)
+        .join(" ")
+    );
+    // remove all elements except the last one.
+    const command = _processes[0];
+    // get pid of command
+    const pid = command
+      .split(" ")
+      .filter((elem) => elem.trim() !== "")[1]
+      .trim();
+    await fetch(
+      `${condition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+      }
+    );
+    proc.status = "STOPPED";
+    logData("[INFO] Bot stopped.");
+    // remove process
+    removeProcess(proc);
+    // add it to previous processes
+    addPreviousProcess(proc);
+  };
+
+  const updateSessionData = async (proc: Process, result: string) => {
+    setProcesses((previous) =>
+      previous.map((process) => {
+        if (
+          process.username === proc.username &&
+          process.device === proc.device
+        ) {
+          process.session = result;
+        }
+        return process;
+      })
+    );
+  };
 
   // Remove process
   const removeProcess = (_process: Process) => {
@@ -52,10 +123,43 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         : [...previous, _process]
     );
   };
-  const condition =
-    process.env.NODE_ENV === "development"
-      ? "http://localhost:3000/"
-      : "https://sinteza.vercel.app/";
+
+  const updateProcessResult = (_process: Process, output: string) => {
+    setProcesses((previous) =>
+      previous.map((process) => {
+        if (process === _process) {
+          if (output.includes(`INFO | Hello, @${process.username}`)) {
+            const c = output.split(" ").filter((el) => el);
+            const following = c[8];
+            const followers = c[11];
+            process.followers = parseInt(followers);
+            process.following = parseInt(following);
+          } else if (!process.result.includes(output)) {
+            process.result = output;
+          }
+        }
+        return process;
+      })
+    );
+  };
+
+  const getSession = async (process: Process) => {
+    if (
+      !process.username ||
+      process.username.trim() === "" ||
+      process.following === 0 ||
+      process.followers === 0
+    )
+      return;
+    const _data: GetSessionFromPython = {
+      username: process.username,
+      followers_now: process.followers,
+      following_now: process.following,
+    };
+    const result = await axios.post(`${condition}api/getSession`, _data);
+    console.log(result.data as string);
+    process.session = result.data as string;
+  };
 
   // get adb devices
   const getDevices = async () => {
@@ -77,7 +181,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     return;
   };
   const logData = (data: string) => {
-    return setData((prevData) => prevData + `${data}\n`);
+    setData((prevData) => prevData + `${data}\n`);
   };
   const handleScroll = () => {
     setTimeout(() => {
@@ -143,11 +247,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               p._user.username,
               p._user.membership,
               p._status,
-              p._result
+              p._result,
+              p._total,
+              p._following,
+              p._followers,
+              p._session
             );
           })
         : [];
-    console.log({ prev });
     setPreviousProcesses(prev);
   }, []);
 
@@ -163,35 +270,44 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               _p._user.username,
               _p._user.membership,
               _p._status,
-              _p._result
+              _p._result,
+              _p._total,
+              _p._following,
+              _p._followers,
+              _p._session
             );
           })
         : [];
-    console.log({ proc });
     setProcesses(proc);
   }, []);
 
   return (
     <>
       <Navigation />
-      <Component
-        {...pageProps}
-        setData={setData}
-        logData={logData}
-        displayError={displayError}
-        setError={setError}
-        handleScroll={handleScroll}
-        removeProcess={removeProcess}
-        setDevices={setDevices}
-        getDevices={getDevices}
-        devices={devices}
-        setDevice={setDevice}
-        addToPool={addToPool}
-        processes={processes}
-      />
+      <main>
+        <Component
+          {...pageProps}
+          setData={setData}
+          logData={logData}
+          displayError={displayError}
+          setError={setError}
+          handleScroll={handleScroll}
+          removeProcess={removeProcess}
+          setDevices={setDevices}
+          getDevices={getDevices}
+          devices={devices}
+          setDevice={setDevice}
+          killBot={killBot}
+          addToPool={addToPool}
+          updateProcessResult={updateProcessResult}
+          processes={processes}
+        />
+      </main>
       {router.pathname === "/" ? (
         <>
           <ShowProcesses
+            killBot={killBot}
+            getSession={getSession}
             removeProcess={removeProcess}
             removePreviousProcess={removePreviousProcess}
             processes={processes}
@@ -200,6 +316,8 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             noProcessesText="No bots are currently running."
           />
           <ShowProcesses
+            killBot={killBot}
+            getSession={getSession}
             removeProcess={removeProcess}
             processes={previousProcesses}
             removePreviousProcess={removePreviousProcess}

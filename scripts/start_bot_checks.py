@@ -49,6 +49,8 @@ if customConfig['hashtag-likers-top']:
 if customConfig['working-hours']:
     customConfig['working-hours'] = customConfig['working-hours'][0].split(
         ",")
+elif type(customConfig['working-hours']) == list and len(customConfig['working-hours']) == 0:
+    customConfig['working-hours'] = ["10.15-16.40", "18.15-22.46"]
 
 # Change username in config.yml file
 

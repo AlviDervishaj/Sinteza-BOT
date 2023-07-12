@@ -139,11 +139,207 @@ export type SessionConfig = {
   },
 }
 
+// infeer the type of the keys of the object
+export type GetKeysOfObject<T> = keyof T;
+
+export type ConfigRowsKeys = GetKeysOfObject<ConfigRowsSkeleton>;
+
+export const ConfigRows = {
+  "last-session-activity-bottling": "",
+  "last-session-activity-likes": "",
+  "last-session-activity-follows": "",
+  "last-session-activity-unfollows": "",
+  "last-session-activity-stories-watched": "",
+  "last-session-activity-comments-done": "",
+  "last-session-activity-pm-sent": "",
+  "today-session-activity-bottling": "",
+  "today-session-activity-likes": "",
+  "today-session-activity-follows": "",
+  "today-session-activity-unfollows": "",
+  "today-session-activity-stories-watched": "",
+  "today-session-activity-comments-done": "",
+  "today-session-activity-pm-sent": "",
+  "trends-new-followers-today": "",
+  "trends-new-followers-past-3-days": "",
+  "trends-new-followers-past-week": "",
+  "trends-milestone": "",
+  "weekly-average-bottling": "",
+  "weekly-average-followers-per-day": "",
+  "weekly-average-likes": "",
+  "weekly-average-follows": "",
+  "weekly-average-unfollows": "",
+  "weekly-average-stories-watched": "",
+  "weekly-average-comments-done": "",
+  "weekly-average-pm-sent": "",
+};
+
+export type ConfigRowsSkeleton = {
+  id?: number | string;
+  "overview-username"?: string;
+  "overview-status"?: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED";
+  "overview-followers"?: string;
+  "overview-following"?: string;
+  "last-session-activity-bottling": string;
+  "last-session-activity-likes": string;
+  "last-session-activity-follows": string;
+  "last-session-activity-unfollows": string;
+  "last-session-activity-stories-watched": string;
+  "last-session-activity-comments-done": string;
+  "last-session-activity-pm-sent": string;
+  "today-session-activity-bottling": string;
+  "today-session-activity-likes": string;
+  "today-session-activity-follows": string;
+  "today-session-activity-unfollows": string;
+  "today-session-activity-stories-watched": string;
+  "today-session-activity-comments-done": string;
+  "today-session-activity-pm-sent": string;
+  "trends-new-followers-today": string;
+  "trends-new-followers-past-3-days": string;
+  "trends-new-followers-past-week": string;
+  "trends-milestone": string;
+  "weekly-average-bottling": string;
+  "weekly-average-followers-per-day": string;
+  "weekly-average-likes": string;
+  "weekly-average-follows": string;
+  "weekly-average-unfollows": string;
+  "weekly-average-stories-watched": string;
+  "weekly-average-comments-done": string;
+  "weekly-average-pm-sent": string;
+}
+
+export const SessionConfigSkeleton: SessionConfig = {
+  args: {
+    config: "",
+    unfollow: "",
+    unfollow_non_followers: "",
+    unfollow_any_non_followers: "",
+    unfollow_any_followers: "",
+    unfollow_any: "",
+    min_following: 0,
+    sort_followers_newest_to_oldest: false,
+    unfollow_delay: 0,
+    unfollow_skip_limit: "",
+    app_id: "",
+    cloned_app_mode: "",
+    device: "",
+    username: "",
+    password: "",
+    relog_after_block: false,
+    relog_delay: "",
+    likes_count: "",
+    likes_percentage: "",
+    total_likes_limit: "",
+    total_follows_limit: "",
+    total_unfollows_limit: "",
+    total_watches_limit: "",
+    total_successful_interactions_limit: "",
+    total_interactions_limit: "",
+    stories_count: "",
+    stories_percentage: "",
+    carousel_count: "",
+    carousel_percentage: "",
+    watch_video_time: "",
+    watch_photo_time: "",
+    interactions_count: "",
+    interact_percentage: "",
+    can_reinteract_after: "",
+    can_recheck_after: "",
+    repeat: "",
+    follow_percentage: "",
+    follow_limit: 0,
+    skipped_list_limit: "",
+    fling_when_skipped: "",
+    speed_multiplier: "",
+    screen_sleep: false,
+    debug: false,
+    screen_record: false,
+    close_apps: false,
+    interact: "",
+    hashtag_likers: "",
+    delete_interacted_users: false,
+    scrape_to_file: "",
+    total_scraped_limit: "",
+    comment_percentage: "",
+    total_comments_limit: "",
+    pm_percentage: "",
+    total_pm_limit: "",
+    max_comments_pro_user: "",
+    end_if_likes_limit_reached: false,
+    end_if_follows_limit_reached: false,
+    end_if_watches_limit_reached: false,
+    end_if_comments_limit_reached: false,
+    end_if_pm_limit_reached: false,
+    truncate_sources: "",
+    shuffle_jobs: false,
+    working_hours: [""],
+    time_delta: "",
+    disable_filters: false,
+    total_crashes_limit: "",
+    change_source_if_crash: false,
+    timeout_startup: "",
+    count_app_crashes: false,
+    skipped_posts_limit: "",
+    uia_version: 0,
+    total_sessions: "",
+    disable_block_detection: false,
+    pre_script: "",
+    post_script: "",
+    move_folders_in_accounts: false,
+    dont_type: false,
+    mute_posts_after_follow: false,
+    mute_stories_after_follow: false,
+    analytics: false,
+    blogger: "",
+    interact_from_file: "",
+    unfollow_from_file: "",
+    blogger_followers: [""],
+    blogger_following: "",
+    blogger_post_likers: "",
+    blogger_post_limits: 0,
+    feed: "",
+    hashtag_likers_top: [""],
+    hashtag_likers_recent: "",
+    hashtag_posts_recent: "",
+    hashtag_posts_top: "",
+    place_likers_top: "",
+    place_likers_recent: "",
+    place_posts_recent: "",
+    place_posts_top: "",
+    posts_from_file: [""],
+    remove_followers_from_file: "",
+    delete_removed_followers: false,
+    rotate_ip: false,
+    telegram_reports: false,
+    welcoming: "",
+    max_welcoming_skips: 0,
+    check_chat_before_welcoming: false,
+    time_delta_session: 0,
+    current_likes_limit: 0,
+    current_follow_limit: 0,
+    current_unfollow_limit: 0,
+    current_comments_limit: 0,
+    current_pm_limit: 0,
+    current_watch_limit: 0,
+    current_success_limit: 0,
+    current_total_limit: 0,
+    current_scraped_limit: 0,
+    current_crashes_limit: 0
+  },
+}
+
 export type SessionProfile = {
   profile: {
     posts: number,
     followers: number,
     following: number
+  }
+}
+
+export const SessionProfileSkeleton: SessionProfile = {
+  profile: {
+    posts: 0,
+    followers: 0,
+    following: 0
   }
 }
 

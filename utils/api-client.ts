@@ -1,18 +1,15 @@
 import { BotFormData } from "./Types";
+import { URLcondition } from "./utils";
 
 type ProgressCallback = (output: string) => void;
 
-const condition =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3000/"
-    : "https://sinteza.vercel.app/";
 
 // Start bot checks and stream output
 export const start_bot_checks = async (
   botData: BotFormData,
   onProgress: ProgressCallback
 ): Promise<string | false> => {
-  const response: Response = await fetch(`${condition}api/start_bot_checks`, {
+  const response: Response = await fetch(`${URLcondition}api/start_bot_checks`, {
     method: "POST",
     cache: "no-cache",
     headers: {
@@ -36,7 +33,7 @@ export const start_bot = async (
   onProgress: ProgressCallback
 ): Promise<string | false> => {
   const response: Response = await fetch(
-    `${condition}api/start_bot`, {
+    `${URLcondition}api/start_bot`, {
     method: "POST",
     cache: "no-cache",
     headers: {
@@ -57,7 +54,7 @@ export const start_bot = async (
 
 export const readFromFile = async (device: string, onProgress: ProgressCallback) => {
   const response: Response = await fetch(
-    `${condition}api/read_from_file`, {
+    `${URLcondition}api/read_from_file`, {
     method: "POST",
     cache: "no-cache",
     headers: {
@@ -76,7 +73,7 @@ export const readFromFile = async (device: string, onProgress: ProgressCallback)
 
 export const writeToFile = async ({ text, device }: { text: string, device: string }) => {
   const response: Response = await fetch(
-    `${condition}api/write_to_file`, {
+    `${URLcondition}api/write_to_file`, {
     method: "POST",
     cache: "no-cache",
     headers: {

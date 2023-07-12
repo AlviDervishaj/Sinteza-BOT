@@ -6,3 +6,8 @@ export const oneWeekAway = () => {
     const inOneWeek = now.setDate(now.getDate() + 7);
     return new Date(inOneWeek);
 }
+
+export const URLcondition =
+    process.env.NODE_ENV === "development"
+        ? "http://localhost:3000/"
+        : "https://sinteza.vercel.app/";

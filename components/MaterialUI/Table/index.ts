@@ -1,0 +1,1 @@
+export { ProcessesTable } from "./Table";

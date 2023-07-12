@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ToastR from "@radix-ui/react-toast";
 import { formatDate, oneWeekAway } from "../../../utils/utils";
 import { Process } from "../../../utils/Process";
+import { Button } from "@mui/material";
 
 export const Toast = ({
   removePreviousProcess,
@@ -20,7 +21,7 @@ export const Toast = ({
 
   return (
     <ToastR.Provider swipeDirection="left">
-      <button
+      <Button
         className="inline-flex items-center justify-center rounded font-medium text-[15px] px-[15px] leading-[35px] h-[35px] bg-white text-violet11 shadow-[0_2px_10px] shadow-blackA7 outline-none hover:bg-mauve3 focus:shadow-[0_0_0_2px] focus:shadow-black"
         onClick={() => {
           setOpen(false);
@@ -32,7 +33,7 @@ export const Toast = ({
         }}
       >
         Remove Bot
-      </button>
+      </Button>
 
       <ToastR.Root
         className="bg-slate-800 rounded-md shadow-[hsl(206_22%_7%_/_35%)_0px_10px_38px_-10px,_hsl(206_22%_7%_/_20%)_0px_10px_20px_-15px] p-[15px] flex flex-col items-start content-center justify-between space-y-4 data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:translate-x-0 data-[swipe=cancel]:transition-[transform_200ms_ease-out] data-[swipe=end]:animate-swipeOut"
@@ -51,14 +52,14 @@ export const Toast = ({
           </time>
         </ToastR.Description>
         <ToastR.Action asChild altText="Remove Process">
-          <button
+          <Button
             onClick={() => {
               removePreviousProcess(process);
             }}
             className="w-fit h-fit px-3 py-1 border-2 border-slate-100 hover:bg-slate-100 hover:text-slate-800 text-white font-semibold rounded-md"
           >
             Remove
-          </button>
+          </Button>
         </ToastR.Action>
       </ToastR.Root>
       <ToastR.Viewport className="[--viewport-padding:_25px] fixed bottom-0 right-0 flex flex-col p-[var(--viewport-padding)] gap-[10px] w-[390px] max-w-[100vw] m-0 list-none z-[2147483647] outline-none" />

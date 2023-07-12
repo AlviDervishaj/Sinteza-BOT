@@ -1,8 +1,26 @@
+import "./BotForm.module.css";
 import { FC, useState, useEffect } from "react";
 import type { Dispatch, MouseEvent, SetStateAction } from "react";
 import { Process } from "../utils/Process";
-import { BotFormData } from "../utils/Types";
+import {
+  BotFormData,
+  ConfigRows,
+  SessionConfigSkeleton,
+  SessionProfileSkeleton,
+} from "../utils/Types";
 import { start_bot, start_bot_checks } from "../utils/api-client";
+import {
+  Button,
+  Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+  Grid,
+} from "@mui/material";
 
 type Props = {
   setError: (error: string) => void;
@@ -10,7 +28,6 @@ type Props = {
   logData: (data: string) => void;
   getDevices: () => void;
   displayError: (error: string) => void;
-  handleScroll: () => void;
   setDevices: Dispatch<SetStateAction<string[]>>;
   devices: string[];
   processes: Process[];
@@ -25,7 +42,6 @@ export const BotForm: FC<Props> = ({
   devices,
   setDevices,
   logData,
-  handleScroll,
   processes,
   killBot,
   addToPool,
@@ -100,8 +116,6 @@ export const BotForm: FC<Props> = ({
     return true;
   };
   const startBotChecks = async () => {
-    // check if another process is running
-    handleScroll();
     start_bot_checks(formData, (output: string) => {
       logData(output);
     });
@@ -124,320 +138,302 @@ export const BotForm: FC<Props> = ({
       membership,
       "RUNNING",
       "",
-      []
+      [],
+      0,
+      0,
+      ConfigRows,
+      SessionConfigSkeleton,
+      SessionProfileSkeleton
     );
     start_bot(formData, (output: string) => {
       updateProcessResult(p, output);
       addToPool(p);
     });
     setAlreadyCalled(false);
-    handleScroll();
   };
   return (
     <>
-      <h2 className="text-center text-4xl tracking-wide py-4">Add a Bot</h2>
-      <section className="w-full lg:w-1/2 mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 place-items-center">
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="username" className="text-base">
-            Username
-          </label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            required
-            value={formData.username}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                username: event.target.value,
-              }))
-            }
-            placeholder="Enter username"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Instagram username of the user that the bot will run for
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="devices" className="text-base">
-            Devices *
-          </label>
-          <select
-            id="devices"
-            name="devices"
-            required
-            value={formData.device}
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                device: event.target.value,
-              }))
-            }
-          >
-            <option value="">Select Device</option>
-            {devices &&
-              devices.map((device) => (
-                <option key={device} value={device}>
-                  {device}
-                </option>
-              ))}
-          </select>
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Refresh the devices by clicking the button below.
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fif">
-          <label htmlFor="membership" className="text-base">
-            Membership
-          </label>
-          <select
-            id="membership"
-            name="membership"
-            required
-            value={membership}
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setMembership(event.target.value as "PREMIUM" | "FREE")
-            }
-          >
-            <option value="FREE">Free</option>
-            <option value="PREMIUM">Premium</option>
-          </select>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="password" className="text-base">
-            Password *
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            required
-            value={formData.password}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                password: event.target.value,
-              }))
-            }
-            placeholder="Enter password"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Instagram password of the user
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="speed-multiplier" className="text-base">
-            Speed *
-          </label>
-          <input
-            type="number"
-            id="speed-multiplier"
-            name="speed-multiplier"
-            required
-            value={formData["speed-multiplier"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                "speed-multiplier": event.target.value as any,
-              }))
-            }
-            placeholder="Enter Speed"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: Just a number
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="truncateSources" className="text-base">
-            Truncate Sources *
-          </label>
-
-          <input
-            type="text"
-            id="truncateSources"
-            name="truncateSources"
-            required
-            value={formData["truncate-sources"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                "truncate-sources": event.target.value,
-              }))
-            }
-            placeholder="Truncate Process"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: Start-End
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="bloggerFollowers" className="text-base">
-            Blogger Followers
-          </label>
-
-          <input
-            type="text"
-            id="bloggerFollowers"
-            name="bloggerFollowers"
-            value={formData["blogger-followers"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                ["blogger-followers"]: event.target.value.toString().split(" "),
-              }))
-            }
-            placeholder="Blogger followers"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: Username1 Username2 Username3
-          </small>
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            To make it easier, the programm inserts a comma after each space
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="hashtagLikesTop" className="text-base">
-            Hashtag Likers Top
-          </label>
-
-          <input
-            type="text"
-            id="hashtagLikesTop"
-            name="hashtagLikesTop"
-            value={formData["hashtag-likers-top"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                ["hashtag-likers-top"]: event.target.value.trim().split(" "),
-              }))
-            }
-            placeholder="Hashtag likes top"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: hashtag1 hashtag2 hashtag3
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="unfollowNonFollowers" className="text-base">
-            Unfollow Non Followers
-          </label>
-
-          <input
-            type="text"
-            id="unfollowNonFollowers"
-            name="unfollowNonFollowers"
-            value={formData["unfollow-non-followers"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                ["unfollow-non-followers"]: event.target.value,
-              }))
-            }
-            placeholder="Unfollow non followers"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: Min-Max
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="unfollowSkipLimit" className="text-base">
-            Unfollow Skip Limit
-          </label>
-
-          <input
-            type="text"
-            id="unfollowSkipLimit"
-            name="unfollowSkipLimit"
-            value={formData["unfollow-skip-limit"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                ["unfollow-skip-limit"]: event.target.value,
-              }))
-            }
-            placeholder="Unfollow skip limit"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: any
-          </small>
-        </div>
-        <div className="flex flex-col gap-1 w-9/12 lg:w-full h-fit">
-          <label htmlFor="workingHours" className="text-base">
-            Working Hours
-          </label>
-
-          <input
-            type="text"
-            id="workingHours"
-            name="workingHours"
-            value={formData["working-hours"]}
-            autoComplete="no"
-            className="bg-transparent max-w-md border-b-2 border-gray-700 px-2 py-1 outline-none hover:bg-slate-200"
-            onChange={(event) =>
-              setFormData((previousData: BotFormData) => ({
-                ...previousData,
-                ["working-hours"]: event.target.value.toString().split(" "),
-              }))
-            }
-            placeholder="Working hours"
-          />
-          <small className="tracking-wider text-slate-600 text-sm lg:text-base">
-            Format: HH.MM-HH.MM HH.MM-HH.MM
-          </small>
-        </div>
-      </section>
-      <div className="space-x-6 pb-20 pt-12">
-        <button
-          disabled={alreadyCalled}
-          onClick={(event) => callApi(event)}
-          type="button"
-          className="w-fit h-fit py-1 px-2 lg:px-4 lg:py-2 disabled:border-red-600 disabled:hover:bg-transparent border border-solid border-green-600 bg-green-400 rounded-lg hover:bg-transparent text-base lg:text-xl"
-        >
-          Start Bot
-        </button>
-        <button
-          onClick={() => getDevices()}
-          type="button"
-          className="w-fit h-fit py-1 px-2 lg:px-4 lg:py-2 disabled:border-red-600 disabled:hover:bg-transparent border border-solid border-slate-400 rounded-lg hover:bg-slate-500 hover:text-slate-100 text-base lg:text-xl"
-        >
-          Refresh Devices
-        </button>
-        <button
-          onClick={(event) =>
-            killBot(
-              event,
-              processes.filter(
-                (p) =>
-                  p.device === formData.device &&
-                  p.username === formData.username
-              )[0]
-            )
-          }
-          type="button"
-          className="w-fit h-fit py-1 px-2 lg:px-4 lg:py-2 disabled:border-red-600 disabled:hover:bg-transparent border border-solid border-red-400 rounded-lg hover:bg-red-500 hover:text-slate-100 text-base lg:text-xl"
-        >
-          Kill Bot
-        </button>
-      </div>
+      <Container maxWidth="sm">
+        <Typography variant="h3" textAlign={"center"} marginBottom={"3rem"}>
+          Add a Bot
+        </Typography>
+        <Grid container spacing={2} gap={4}>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                type="text"
+                id="username"
+                name="username"
+                required
+                label="Username"
+                value={formData.username}
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    username: event.target.value,
+                  }))
+                }
+                placeholder="Enter username"
+              />
+              <Typography paragraph>
+                Instagram username of the user that the bot will run for
+              </Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel id="select-device">Select a Device</InputLabel>
+                <Select
+                  id="devices"
+                  labelId="select-device"
+                  label="Select a device"
+                  required
+                  value={formData.device}
+                  onChange={(event) =>
+                    setFormData((previousData: BotFormData) => ({
+                      ...previousData,
+                      device: event.target.value,
+                    }))
+                  }
+                >
+                  {devices &&
+                    devices.map((device) => (
+                      <MenuItem key={device} value={device}>
+                        {device}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+              <Typography paragraph>
+                Refresh the devices by clicking the button below.
+              </Typography>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                type="password"
+                id="password"
+                name="password"
+                required
+                label="Password"
+                value={formData.password}
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    password: event.target.value,
+                  }))
+                }
+                placeholder="Enter password"
+              />
+              <Typography paragraph>Instagram password of the user</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel id="select-membership">
+                  Select a membership
+                </InputLabel>
+                <Select
+                  id="membership"
+                  labelId="select-membership"
+                  label="Select a membership"
+                  required
+                  value={membership}
+                  onChange={(event) =>
+                    setMembership(event.target.value as "PREMIUM" | "FREE")
+                  }
+                >
+                  <MenuItem value="FREE">Free</MenuItem>
+                  <MenuItem value="PREMIUM">Premium</MenuItem>
+                </Select>
+              </FormControl>
+              <Typography paragraph>
+                Select the membership of the client.
+              </Typography>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                type="number"
+                id="speed-multiplier"
+                name="speed-multiplier"
+                label="Speed"
+                required
+                value={formData["speed-multiplier"]}
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    "speed-multiplier": event.target.value as any,
+                  }))
+                }
+                placeholder="Enter Speed"
+              />
+              <Typography paragraph>Format: Just a number</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                type="text"
+                id="truncateSources"
+                name="truncateSources"
+                required
+                label="Truncate Sources"
+                value={formData["truncate-sources"]}
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    "truncate-sources": event.target.value,
+                  }))
+                }
+                placeholder="Truncate Process"
+              />
+              <Typography paragraph>Format: Start-End</Typography>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                type="text"
+                id="bloggerFollowers"
+                name="bloggerFollowers"
+                label="Blogger Followers"
+                value={formData["blogger-followers"]}
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    ["blogger-followers"]: event.target.value
+                      .toString()
+                      .split(" "),
+                  }))
+                }
+                placeholder="Blogger followers"
+              />
+              <Typography paragraph>Format: Username1 ...</Typography>
+            </Grid>
+            <Grid item>
+              <TextField
+                type="text"
+                id="hashtagLikesTop"
+                name="hashtagLikesTop"
+                label="Hashtag Likers Top"
+                value={formData["hashtag-likers-top"]}
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    ["hashtag-likers-top"]: event.target.value
+                      .trim()
+                      .split(" "),
+                  }))
+                }
+                placeholder="Hashtag likes top"
+              />
+              <Typography paragraph>Format: hashtag1 ...</Typography>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                type="text"
+                id="unfollowNonFollowers"
+                name="unfollowNonFollowers"
+                value={formData["unfollow-non-followers"]}
+                label="Unfollow Non Followers"
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    ["unfollow-non-followers"]: event.target.value,
+                  }))
+                }
+                placeholder="Unfollow non followers"
+              />
+              <Typography paragraph>Format: Min-Max</Typography>
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                type="text"
+                id="unfollowSkipLimit"
+                name="unfollowSkipLimit"
+                value={formData["unfollow-skip-limit"]}
+                label="Unfollow Skip Limit"
+                autoComplete="no"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    ["unfollow-skip-limit"]: event.target.value,
+                  }))
+                }
+                placeholder="Unfollow skip limit"
+              />
+              <Typography paragraph>Format: any</Typography>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={6}>
+              <TextField
+                type="text"
+                id="workingHours"
+                name="workingHours"
+                value={formData["working-hours"]}
+                autoComplete="no"
+                label="Working Hours"
+                onChange={(event) =>
+                  setFormData((previousData: BotFormData) => ({
+                    ...previousData,
+                    ["working-hours"]: event.target.value.toString().split(" "),
+                  }))
+                }
+                placeholder="Working hours"
+              />
+              <Typography paragraph>Format: HH.MM-HH.MM HH.MM-HH.MM</Typography>
+            </Grid>
+          </Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={4}>
+              <Button
+                disabled={alreadyCalled}
+                onClick={(event) => callApi(event)}
+                color="success"
+                variant="contained"
+              >
+                Start Bot
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                onClick={() => getDevices()}
+                color="info"
+                variant="contained"
+              >
+                Refresh Devices
+              </Button>
+            </Grid>
+            <Grid item xs={4}>
+              <Button
+                onClick={(event) =>
+                  killBot(
+                    event,
+                    processes.filter(
+                      (p) =>
+                        p.device === formData.device &&
+                        p.username === formData.username
+                    )[0]
+                  )
+                }
+                color="error"
+                variant="contained"
+              >
+                Kill Bot
+              </Button>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Container>
     </>
   );
 };

@@ -1,3 +1,4 @@
+import { Box, Typography } from "@mui/material";
 import { FC, useRef, useEffect } from "react";
 
 type Props = {
@@ -16,18 +17,43 @@ export const Output: FC<Props> = ({ data, error }) => {
 
   return (
     <>
-      <h2 className="text-xl lg:text-2xl p-4">Output</h2>
-      <div
+      <Typography variant="h5">Output</Typography>
+      <Box
         ref={refBox}
-        className="flex-1 !overflow-auto h-outputBox mb-14 bg-slate-300 relative"
+        sx={{
+          height: "20rem",
+          position: "relative",
+          overflow: "auto",
+          backgroundColor: "#ced4da",
+        }}
       >
-        <pre className="m-4 text-[1em] whitespace-pre-wrap break-words">
+        <Typography
+          variant="subtitle1"
+          component={"pre"}
+          sx={{
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            fontSize: "1rem",
+            margin: "0.5rem 1rem",
+            padding: "1rem",
+            lineHeight: "2rem",
+          }}
+        >
           {data && data}
-        </pre>
-        <pre className="m-4 text-[1.1em] whitespace-pre-wrap text-red-600">
+        </Typography>
+        <Typography
+          variant="subtitle1"
+          component={"pre"}
+          sx={{
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            fontSize: "1em",
+            color: "red",
+          }}
+        >
           {error && error}
-        </pre>
-      </div>
+        </Typography>
+      </Box>
     </>
   );
 };

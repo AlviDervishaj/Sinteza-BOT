@@ -1,8 +1,13 @@
-import { Session } from "./Types";
 
+// uuid
+import { v5 as uuidv5 } from "uuid";
+
+import { ConfigRows, ConfigRowsSkeleton, Session, SessionConfig, SessionConfigSkeleton, SessionProfile, SessionProfileSkeleton } from "./Types";
+let id = 0;
 export type ProcessSkeleton = {
   _device: string,
   _result: string,
+  _config: SessionConfig,
   _user: {
     username: string,
     membership: "PREMIUM" | "FREE",
@@ -11,7 +16,8 @@ export type ProcessSkeleton = {
   _total: Session[];
   _following: number;
   _followers: number;
-  _session: string;
+  _session: ConfigRowsSkeleton;
+  _profile: SessionProfile
 
 }
 export class Process {
@@ -20,16 +26,17 @@ export class Process {
   private _total: Session[];
   private _followers: number;
   private _following: number;
-  private _session: string;
+  private _session: ConfigRowsSkeleton;
   private _user: {
     username: string,
     membership: "PREMIUM" | "FREE",
   };
   private _status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED";
+  private _config: SessionConfig;
+  private _profile: SessionProfile;
 
 
-
-  constructor(device: string, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string, total: Session[], following: number, followers: number, session: string = "") {
+  constructor(device: string, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string, total: Session[], following: number = 0, followers: number = 0, session: ConfigRowsSkeleton, config: SessionConfig = SessionConfigSkeleton, profile: SessionProfile = SessionProfileSkeleton) {
     this._user = {
       username,
       membership
@@ -40,7 +47,10 @@ export class Process {
     this._total = total;
     this._followers = followers;
     this._following = following;
-    this._session = session;
+    this._config = config;
+    this._profile = profile;
+    this._session = session ? session : ConfigRows;
+    id++;
   }
 
   get device() {
@@ -51,10 +61,28 @@ export class Process {
     return;
   }
 
+  get profile() {
+    return this._profile;
+  }
+
+  set profile(profile: SessionProfile) {
+    this._profile = profile;
+    return;
+  }
+
+  get config() {
+    return this._config;
+  }
+
+  set config(config: SessionConfig) {
+    this._config = config;
+    return;
+  }
+
   get session() {
     return this._session;
   }
-  set session(session: string) {
+  set session(session: ConfigRowsSkeleton) {
     this._session = session;
     return;
   }

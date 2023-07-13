@@ -272,10 +272,12 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const logData = (data: string) => {
     setData((prevData) => prevData + `${data}\n`);
   };
+  // populate devices
   useEffect(() => {
     getDevices();
   }, []);
 
+  // handle device change
   useEffect(() => {
     // handle device selection
     if (devices.length === 0) {
@@ -289,6 +291,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     }
   }, [devices]);
 
+  // store processes in local storage as a temporary solution
   useEffect(() => {
     function storeInLS() {
       localStorage.setItem(
@@ -304,6 +307,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     };
   }, [processes]);
 
+  // get processes from local storage
   useEffect(() => {
     const p: ProcessSkeleton[] | [] = localStorage.getItem("processes")
       ? JSON.parse(localStorage.getItem("processes") as string)

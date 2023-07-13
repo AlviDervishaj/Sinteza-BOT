@@ -191,7 +191,6 @@ class GenerateReports():
         except Exception as e:
             logger(f"Failed to flush data from telegram config : {e}")
 
-
-generatedReports = GenerateReports()
-generatedReports.run(username=data["username"],
-                     followers_now=data["followers_now"], following_now=data["following_now"])
+        generatedReports = GenerateReports()
+        generatedReports.run(username=data["username"],
+                             followers_now=data["followers_now"], following_now=data["following_now"])

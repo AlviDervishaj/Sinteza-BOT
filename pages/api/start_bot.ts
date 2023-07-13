@@ -13,7 +13,7 @@ export default function POST(req: NextApiRequest, res: NextApiResponse) {
     return res.end();
   }
   log('[INFO] Starting Bot ...');
-  const cmd: ChildProcessWithoutNullStreams = spawn(`python3 ${path.join(process.cwd(),
+  const cmd: ChildProcessWithoutNullStreams = spawn(`python ${path.join(process.cwd(),
     'scripts/start_bot.py',)
     }`,
     { shell: true }

@@ -11,7 +11,7 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
         return res.end("[ERROR] Can not read file when username is not provided");
     }
     const _path: string = path.join(process.cwd(), 'scripts/get_config.py');
-    const cmd: ChildProcessWithoutNullStreams = spawn(`python3 ${_path}`, { shell: true });
+    const cmd: ChildProcessWithoutNullStreams = spawn(`python ${_path}`, { shell: true });
     log(`[INFO] Getting config for ${username} ...`);
     cmd.stdin.write(username);
     cmd.stdin.end();

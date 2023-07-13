@@ -9,9 +9,9 @@ export type Response = {
 export type BotFormData = {
   username: string;
   device: string;
-  password: string;
-  "speed-multiplier": number;
-  "truncate-sources": string,
+  password?: string;
+  "speed-multiplier"?: number;
+  "truncate-sources"?: string,
   "blogger-followers"?: string[],
   "hashtag-likers-top"?: string[],
   "unfollow-non-followers"?: string,

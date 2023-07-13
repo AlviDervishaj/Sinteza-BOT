@@ -23,13 +23,26 @@ export const Accordion: FC<Props> = ({
 }) => {
   const [expanded, setExpanded] = useState<string | false>(false);
 
+  const mapColorsToStatus = (status: string) => {
+    switch (status) {
+      case "WAITING":
+        return "#70798c";
+      case "FINISHED":
+        return "#3da35d";
+      case "STOPPED":
+        return "#d7010f";
+      default:
+        return "#233d4d";
+    }
+  };
+
   const handleChange =
     (tab: string) => (event: SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? tab : false);
     };
 
   return (
-    <Box>
+    <Box sx={{ width: 9 / 10 }}>
       {processes.map((process, index) => (
         <A
           expanded={
@@ -42,20 +55,29 @@ export const Accordion: FC<Props> = ({
           )}
         >
           <AccordionSummary
-            expandIcon={<ExpandMore />}
-            aria-controls="panel1bh-content"
-            id="panel1bh-header"
+            expandIcon={<ExpandMore sx={{ color: "#fff" }} />}
+            aria-controls="pannel-content"
+            id="pannel-header"
+            sx={{
+              backgroundColor: mapColorsToStatus(process.status),
+              color: "white",
+            }}
           >
             <Typography
               key={`${process.username} ${index}`}
-              sx={{ width: "33%", flexShrink: 0 }}
+              sx={{
+                width: "40%",
+                flexShrink: 0,
+                letterSpacing: "0.1rem",
+                fontWeight: "bold",
+              }}
             >
               {process.username}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
             <Typography>Device: {process.device}</Typography>
-            <Output data={process.result} error="" />
+            <Output data={process.result} />
             <Button
               variant="outlined"
               color="error"

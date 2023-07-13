@@ -1,4 +1,3 @@
-import "./BotForm.module.css";
 import { FC, useState, useEffect } from "react";
 import type { Dispatch, MouseEvent, SetStateAction } from "react";
 import { Process } from "../utils/Process";
@@ -75,16 +74,16 @@ export const BotForm: FC<Props> = ({
       return setError("Please select a device.");
     }
     if (!formData.password || formData.password.trim() === "") {
-      return setError("Please enter a password.");
+      logData("[INFO] Password: DEFAULT");
     }
     if (!formData["speed-multiplier"] || formData["speed-multiplier"] === 0) {
-      return setError("Please enter a Speed Multiplier.");
+      logData("[INFO] Speed Multiplier: DEFAULT");
     }
     if (
       !formData["truncate-sources"] ||
       formData["truncate-sources"].trim() === ""
     ) {
-      return setError("Please enter truncate sources.");
+      logData("[INFO] Truncate Sources: DEFAULT");
     }
     if (
       !formData["blogger-followers"] ||
@@ -215,7 +214,6 @@ export const BotForm: FC<Props> = ({
                 type="password"
                 id="password"
                 name="password"
-                required
                 label="Password"
                 value={formData.password}
                 autoComplete="no"
@@ -260,7 +258,6 @@ export const BotForm: FC<Props> = ({
                 id="speed-multiplier"
                 name="speed-multiplier"
                 label="Speed"
-                required
                 value={formData["speed-multiplier"]}
                 autoComplete="no"
                 onChange={(event) =>
@@ -278,7 +275,6 @@ export const BotForm: FC<Props> = ({
                 type="text"
                 id="truncateSources"
                 name="truncateSources"
-                required
                 label="Truncate Sources"
                 value={formData["truncate-sources"]}
                 autoComplete="no"

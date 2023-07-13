@@ -5,10 +5,8 @@ import {
   DataGrid,
   GridColDef,
   GridColumnGroupingModel,
-  GridEventListener,
-  GridRowParams,
-  useGridApiRef,
-  GridRowIdGetter,
+  GridToolbarContainer,
+  GridToolbarExport,
 } from "@mui/x-data-grid";
 import { Process, ProcessSkeleton } from "../../../utils/Process";
 import { Box } from "@mui/material";
@@ -18,6 +16,14 @@ type Props = {
   processes: Process[];
   getSession: (process: Process) => void;
   stopProcessByUsername: (username: string) => void;
+};
+
+const GridToolbar = () => {
+  return (
+    <GridToolbarContainer>
+      <GridToolbarExport />
+    </GridToolbarContainer>
+  );
 };
 
 export const ProcessesTable: FC<Props> = ({ processes }) => {
@@ -278,8 +284,16 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
   useEffect(() => {
     setTimeout(() => setLoading(false), 1000);
   });
+
   return (
-    <Box sx={{ height: 400, width: "100%" }}>
+    <Box
+      sx={{
+        height: "fit-content",
+        width: "100%",
+        paddingBottom: "2rem",
+      }}
+      id="processes-table"
+    >
       <DataGrid
         aria-label="Processes Table"
         experimentalFeatures={{ columnGrouping: true }}
@@ -291,6 +305,7 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
         checkboxSelection
         disableRowSelectionOnClick
         columnGroupingModel={ConfigColsGroupingModel}
+        slots={{ toolbar: GridToolbar }}
       />
     </Box>
   );

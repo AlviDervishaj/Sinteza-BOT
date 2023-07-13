@@ -3,10 +3,9 @@ import { FC, useRef, useEffect } from "react";
 
 type Props = {
   data: string;
-  error: string;
 };
 
-export const Output: FC<Props> = ({ data, error }) => {
+export const Output: FC<Props> = ({ data }) => {
   const refBox = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const elBox = refBox.current;
@@ -37,21 +36,10 @@ export const Output: FC<Props> = ({ data, error }) => {
             margin: "0.5rem 1rem",
             padding: "1rem",
             lineHeight: "2rem",
+            color: !data.includes("Error") ? "#2b2d42" : "#d90429",
           }}
         >
           {data && data}
-        </Typography>
-        <Typography
-          variant="subtitle1"
-          component={"pre"}
-          sx={{
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-            fontSize: "1em",
-            color: "red",
-          }}
-        >
-          {error && error}
         </Typography>
       </Box>
     </>

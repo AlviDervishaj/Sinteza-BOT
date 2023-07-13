@@ -30,19 +30,11 @@ if not customConfig['username']:
 if not customConfig['device']:
     _print("Please enter a valid device.")
     exit()
-if not customConfig['password']:
-    _print("Please enter a valid password.")
-    exit()
-if not customConfig['speed-multiplier']:
-    _print("Please enter a valid speed.")
-    exit()
-if not customConfig['truncate-sources']:
-    _print("Please provide truncate Sources.")
-    exit()
 
 # Remaping keys
 if customConfig['blogger-followers']:
-    customConfig['blogger-followers'] = customConfig['blogger-followers']
+    customConfig['blogger-followers'] = customConfig['blogger-followers'].split(
+        ",")
 if customConfig['hashtag-likers-top']:
     customConfig['hashtag-likes-top'] = customConfig['hashtag-likes-top'].split(
         ",")

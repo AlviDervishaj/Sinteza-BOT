@@ -1,3 +1,4 @@
+openpyxl
 adbutils==1.2.9
 apkutils2==1.0.0
 apturl==0.5.2

@@ -1,5 +1,4 @@
-// CSS
-import "./global.css";
+// Fonts
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
@@ -45,8 +44,15 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const [device, setDevice] = useState<string>("");
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  // const darkTheme = createTheme({ palette: { mode: "dark" } });
   const lightTheme = createTheme({ palette: { mode: "light" } });
+
+  const exportToExcel = async () => {
+    const result = await axios.post(`${URLcondition}api/exportToExcel`, {
+      data: processes,
+    });
+    console.log({ data: result.data });
+  };
+
   const killBot = async (event: any, proc: Process) => {
     event.preventDefault();
     // call terminateProcess
@@ -184,7 +190,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             process.status !== "RUNNING"
           ) {
             process = _process;
-            process.result = "";
+            console.log("process changed");
           }
           return process;
         });
@@ -199,6 +205,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const followers = c[11];
     process.followers = parseInt(followers);
     process.following = parseInt(following);
+    addToPool(process);
   };
 
   // update a process's result
@@ -222,12 +229,23 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               .post(`${URLcondition}api/getSession`, _data)
               .then((result) => {
                 const data = result.data as ConfigRowsSkeleton;
-                console.log({ data });
                 process.session = data;
+                addToPool(process);
               });
           } else if (output.includes("INFO | -------- FINISH:")) {
             process.status = "FINISHED";
-            getSession(process);
+            const _data: GetSessionFromPython = {
+              username: process.username,
+              followers_now: process.followers,
+              following_now: process.following,
+            };
+            axios
+              .post(`${URLcondition}api/getSession`, _data)
+              .then((result) => {
+                const data = result.data as ConfigRowsSkeleton;
+                process.session = data;
+                addToPool(process);
+              });
           }
         }
         return process;
@@ -246,7 +264,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const result = await axios.post(`${URLcondition}api/getSession`, _data);
     const data = result.data as ConfigRowsSkeleton;
     process.session = data;
-    return;
+    addToPool(process);
   };
 
   // get adb devices
@@ -272,12 +290,12 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const logData = (data: string) => {
     setData((prevData) => prevData + `${data}\n`);
   };
+  // get connected devices
   useEffect(() => {
     getDevices();
   }, []);
-
+  // handle device selection
   useEffect(() => {
-    // handle device selection
     if (devices.length === 0) {
       logData("[INFO] No devices connected");
       return;
@@ -289,6 +307,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     }
   }, [devices]);
 
+  // store processes in local storage
   useEffect(() => {
     function storeInLS() {
       localStorage.setItem(
@@ -304,6 +323,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     };
   }, [processes]);
 
+  // get processes from local storage
   useEffect(() => {
     const p: ProcessSkeleton[] | [] = localStorage.getItem("processes")
       ? JSON.parse(localStorage.getItem("processes") as string)
@@ -329,6 +349,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     setProcesses(proc);
   }, []);
 
+  // give app time to load
   useEffect(() => {
     setTimeout(() => {
       setIsLoading(false);
@@ -356,7 +377,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     <ThemeProvider theme={lightTheme}>
       <CssBaseline enableColorScheme />
       <Navigation />
-      <main style={{ padding: "2rem 0" }}>
+      <Box>
         <Component
           {...pageProps}
           setData={setData}
@@ -373,9 +394,9 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           updateProcessResult={updateProcessResult}
           processes={processes}
         />
-      </main>
+      </Box>
       {router.pathname === "/" ? (
-        <>
+        <Box sx={{ margin: "2rem 0", width: "100vw", height: "100vh" }}>
           <Container maxWidth="xl" sx={{ margin: "0 auto", overflow: "auto" }}>
             <Typography variant="h4" sx={{ paddingBottom: "1rem" }}>
               Processes
@@ -389,7 +410,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           <Box
             sx={{
               width: "100%",
-              height: "100%",
+              height: "fit-content",
               backgroundColor: "#e5e5e5",
               padding: "2rem",
             }}
@@ -402,7 +423,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               removePreviousProcess={removePreviousProcess}
             />
           </Box>
-        </>
+        </Box>
       ) : null}
       <Snackbar
         open={open}
@@ -414,7 +435,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         message="Process status changed to stopped. "
       />
       <div ref={scrollToMe}>
-        {router.pathname !== "/" ? <Output data={data} error={error} /> : null}
+        {router.pathname !== "/" ? <Output data={data} /> : null}
       </div>
     </ThemeProvider>
   );

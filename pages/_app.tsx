@@ -349,6 +349,18 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     setProcesses(proc);
   }, []);
 
+  // testing web usb api
+  useEffect(() => {
+    navigator.usb.onconnect = (event) => {
+      console.log({ event });
+    };
+    const _getDevices = async () => {
+      let _devices = await navigator.usb.getDevices();
+      console.log({ _devices });
+    };
+    _getDevices();
+  }, []);
+
   // give app time to load
   useEffect(() => {
     setTimeout(() => {

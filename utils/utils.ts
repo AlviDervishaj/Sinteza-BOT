@@ -7,9 +7,9 @@ export const oneWeekAway = () => {
     return new Date(inOneWeek);
 }
 
-// Netlify url : https://64afab9cb65fd600085d9c17--kaleidoscopic-semifreddo-dcb21f.netlify.app/
+// Netlify url : https://sinteza.netlify.app/
 // Vercel url : https://sinteza.vercel.app/
 export const URLcondition =
     process.env.NODE_ENV === "development"
         ? "http://localhost:3000/"
-        : "https://64afab9cb65fd600085d9c17--kaleidoscopic-semifreddo-dcb21f.netlify.app/";
+        : "https://sinteza.netlify.app/";

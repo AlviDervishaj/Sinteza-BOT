@@ -228,6 +228,8 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           }
           if (output.includes(`INFO | Hello, @${process.username}`)) {
             updateProcessFollowers(output, process);
+          } else if (output.includes("INFO | Current active-job:")) {
+            // TODO: display current active job
           } else if (output.includes("INFO | Next session will start at:")) {
             process.status = "WAITING";
             const _data: GetSessionFromPython = {
@@ -242,6 +244,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
                 process.session = data;
                 addToPool(process);
               });
+          } else if (output.includes("WARNING | App has crashed")) {
+            process.status = "STOPPED";
+            process.total_crashes += 1;
+            addToPool(process);
           } else if (output.includes("INFO | -------- FINISH:")) {
             process.status = "FINISHED";
             const _data: GetSessionFromPython = {
@@ -391,7 +397,8 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               _p._followers,
               _p._session,
               _p._config,
-              _p._profile
+              _p._profile,
+              _p._total_crashes
             );
           })
         : [];

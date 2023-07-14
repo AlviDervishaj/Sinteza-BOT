@@ -44,6 +44,11 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
       width: 100,
     },
     {
+      field: "overview-total-crashes",
+      headerName: "Total Crashes",
+      width: 150,
+    },
+    {
       field: "overview-followers",
       headerName: "Followers",
       width: 200,
@@ -211,6 +216,7 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
       return {
         id: uuidv5(process.username, uuidv5.URL),
         "overview-username": process.username,
+        "overview-total-crashes": process.total_crashes,
         "overview-status": process.status,
         "overview-followers": session["overview-followers"],
         "overview-following": session["overview-following"],
@@ -226,6 +232,7 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
       children: [
         { field: "overview-username" },
         { field: "overview-status" },
+        { field: "overview-total-crashes" },
         { field: "overview-followers" },
         { field: "overview-following" },
       ],

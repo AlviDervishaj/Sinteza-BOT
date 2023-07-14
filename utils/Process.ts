@@ -7,6 +7,7 @@ export type ProcessSkeleton = {
   _device: { id: string, name: string },
   _result: string,
   _config: SessionConfig,
+  _total_crashes: number,
   _user: {
     username: string,
     membership: "PREMIUM" | "FREE",
@@ -26,6 +27,7 @@ export class Process {
   private _followers: number;
   private _following: number;
   private _session: ConfigRowsSkeleton;
+  private _total_crashes: number = 0;
   private _user: {
     username: string,
     membership: "PREMIUM" | "FREE",
@@ -35,7 +37,19 @@ export class Process {
   private _profile: SessionProfile;
 
 
-  constructor(device: { id: string, name: string }, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string, total: Session[], following: number = 0, followers: number = 0, session: ConfigRowsSkeleton, config: SessionConfig = SessionConfigSkeleton, profile: SessionProfile = SessionProfileSkeleton) {
+  constructor(
+    device: { id: string, name: string },
+    username: string,
+    membership: "PREMIUM" | "FREE",
+    status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED",
+    result: string, total: Session[],
+    following: number = 0,
+    followers: number = 0,
+    session: ConfigRowsSkeleton,
+    config: SessionConfig = SessionConfigSkeleton,
+    profile: SessionProfile = SessionProfileSkeleton,
+    _total_crashes: number = 0
+  ) {
     this._user = {
       username,
       membership
@@ -47,6 +61,7 @@ export class Process {
     this._followers = followers;
     this._following = following;
     this._config = config;
+    this._total_crashes = _total_crashes ? _total_crashes : 0;
     this._profile = profile;
     this._session = session ? session : ConfigRows;
     id++;
@@ -57,6 +72,15 @@ export class Process {
   }
   set device(device: { id: string, name: string }) {
     this._device = device;
+    return;
+  }
+
+  get total_crashes() {
+    return this._total_crashes;
+  }
+
+  set total_crashes(total_crashes: number) {
+    this._total_crashes = total_crashes;
     return;
   }
 

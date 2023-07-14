@@ -6,19 +6,20 @@ import {
   Accordion as A,
   Box,
   Button,
+  Tooltip,
 } from "@mui/material";
 import { ExpandMore } from "@mui/icons-material";
 import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
 type Props = {
-  removePreviousProcess: (process: Process) => void;
+  removeProcessFromPool: (process: Process) => void;
   processes: Process[];
   killBot: (event: any, process: Process) => void;
 };
 
 export const Accordion: FC<Props> = ({
   processes,
-  removePreviousProcess,
+  removeProcessFromPool,
   killBot,
 }) => {
   const [expanded, setExpanded] = useState<string | false>(false);
@@ -76,16 +77,31 @@ export const Accordion: FC<Props> = ({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Typography>Device: {process.device}</Typography>
+            <Typography>Device: {process.device.name}</Typography>
             <Output data={process.result} />
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={(event) => killBot(event, process)}
-              sx={{ margin: "1rem 1rem 0 0" }}
+            <Tooltip title="Stops bot from running." arrow>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={(event) => killBot(event, process)}
+                sx={{ margin: "1rem 1rem 0 0" }}
+              >
+                Stop
+              </Button>
+            </Tooltip>
+            <Tooltip
+              title="Remove bot from view. Only if bot is not running"
+              arrow
             >
-              Stop
-            </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => removeProcessFromPool(process)}
+                sx={{ margin: "1rem 1rem 0 0" }}
+              >
+                Remove
+              </Button>
+            </Tooltip>
           </AccordionDetails>
         </A>
       ))}

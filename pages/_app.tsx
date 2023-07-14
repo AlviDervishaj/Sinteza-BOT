@@ -9,16 +9,7 @@ import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import type { AppProps } from "next/app";
 import { NextRouter, useRouter } from "next/router";
 
-// Axios
-import axios from "axios";
-
-import { Navigation, Output, ProcessesTable } from "../components";
-import { Process, ProcessSkeleton } from "../utils/Process";
-import {
-  ConfigRows,
-  ConfigRowsSkeleton,
-  GetSessionFromPython,
-} from "../utils/Types";
+// Material UI
 import {
   Button,
   Snackbar,
@@ -31,8 +22,22 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { URLcondition } from "../utils/utils";
+
+// Axios
+import axios from "axios";
+
+// Components
+import { Navigation, Output, ProcessesTable } from "../components";
 import { ShowProcesses } from "../components/ShowProcesses";
+// Utils
+import { Process, ProcessSkeleton } from "../utils/Process";
+import { DevicesList } from "../utils/Devices";
+import {
+  ConfigRows,
+  ConfigRowsSkeleton,
+  GetSessionFromPython,
+} from "../utils/Types";
+import { URLcondition } from "../utils/utils";
 
 export default function Sinteza({ Component, pageProps }: AppProps) {
   const [open, setOpen] = useState<boolean>(false);
@@ -40,18 +45,17 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const scrollToMe = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string>("");
   const [data, setData] = useState<string>("");
-  const [devices, setDevices] = useState<string[]>([]);
-  const [device, setDevice] = useState<string>("");
+  const [devices, setDevices] = useState<{ id: string; name: string }[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const lightTheme = createTheme({ palette: { mode: "light" } });
 
-  const exportToExcel = async () => {
-    const result = await axios.post(`${URLcondition}api/exportToExcel`, {
-      data: processes,
-    });
-    console.log({ data: result.data });
-  };
+  // const exportToExcel = async () => {
+  //   const result = await axios.post(`${URLcondition}api/exportToExcel`, {
+  //     data: processes,
+  //   });
+  //   console.log({ data: result.data });
+  // };
 
   const killBot = async (event: any, proc: Process) => {
     event.preventDefault();
@@ -153,7 +157,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   );
 
   // Remove previous Process
-  const removePreviousProcess = (_process: Process) => {
+  const removeProcessFromPool = (_process: Process) => {
     setProcesses((previous) =>
       previous.filter(
         (process) => process.status !== "RUNNING" && _process !== process
@@ -187,10 +191,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         const _previous = previous.map((process) => {
           if (
             process.username === _process.username &&
+            process.device.id === _process.device.id &&
             process.status !== "RUNNING"
           ) {
             process = _process;
-            console.log("process changed");
+            process.status = _process.status;
+            process.session = _process.session;
+            process.followers = _process.followers;
+            process.following = _process.following;
           }
           return process;
         });
@@ -267,13 +275,59 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     addToPool(process);
   };
 
+  // // get adb devices
+  // const getDevices = async () => {
+  //   const getBusNumbers = await axios.get(`${URLcondition}api/getBusNumbers`);
+  //   const busNumbers: string[] = (await getBusNumbers.data)
+  //     .split("\n")
+  //     .filter((d: string) => d.trim() !== "")
+  //     .map((d: string) => {
+  //       const bus_numbers = d.replace(":", "").split(" ");
+  //       return bus_numbers.join(":");
+  //     });
+  //   let devicesArray: { id: string; name: string }[] = [];
+  //   busNumbers.forEach(async (busNumber) => {
+  //     const r = await axios.get(`${URLcondition}api/getDevices?`, {
+  //       params: {
+  //         bus_number: busNumber,
+  //       },
+  //     });
+  //     const _d: string = await r.data;
+  //     const _temp_d: string[] = _d.split(" ").filter((d) => d.trim() !== "");
+  //     const _temp: { id: string; name: string } = {
+  //       id: _temp_d[_temp_d.length - 1].replace("\n", ""),
+  //       name: `${_temp_d[2]} ${_temp_d[3]} ${_temp_d[8]} ${_temp_d[9]}`,
+  //     };
+  //     devicesArray.push(_temp);
+  //   });
+  //   logData(
+  //     `[INFO] ${devicesArray.length} device${
+  //       devicesArray.length > 1 ? "s" : ""
+  //     } connected.`
+  //   );
+  //   setDevices(devicesArray);
+  // };
+
+  // Display Data
+
   // get adb devices
   const getDevices = async () => {
     const result = await fetch(`${URLcondition}api/getDevices`);
     const listOfDevices: string = (await result.text())
       .replace("List of devices attached", "")
       .replace("device", "");
-    const devices = listOfDevices.trim().split("\n");
+    const devicesID = listOfDevices.trim().split("\n");
+    // map devices to name. from the json file
+    let devices: { id: string; name: string }[] = [];
+    devicesID.forEach((id) => {
+      Object.entries(DevicesList).forEach(
+        ([key, value]: [key: string, value: string]) => {
+          if (key === id) {
+            devices.push({ id: key, name: value });
+          }
+        }
+      );
+    });
     logData(
       `[INFO] ${devices.length} device${
         devices.length > 1 ? "s" : ""
@@ -281,8 +335,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     );
     setDevices(devices);
   };
-
-  // Display Data
   const displayError = (error: string) => {
     setError((prevError) => prevError + `${error}\n`);
     return;
@@ -294,18 +346,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   useEffect(() => {
     getDevices();
   }, []);
-  // handle device selection
-  useEffect(() => {
-    if (devices.length === 0) {
-      logData("[INFO] No devices connected");
-      return;
-    } else if (device === "") {
-      logData("[INFO] Please select a device");
-      return;
-    } else {
-      logData(`[INFO] Device ${device} selected.`);
-    }
-  }, [devices]);
 
   // store processes in local storage
   useEffect(() => {
@@ -388,7 +428,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           setDevices={setDevices}
           getDevices={getDevices}
           devices={devices}
-          setDevice={setDevice}
           killBot={killBot}
           addToPool={addToPool}
           updateProcessResult={updateProcessResult}
@@ -420,7 +459,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               killBot={killBot}
               noProcessesText="No Processes currently running..."
               processes={processes}
-              removePreviousProcess={removePreviousProcess}
+              removeProcessFromPool={removeProcessFromPool}
             />
           </Box>
         </Box>

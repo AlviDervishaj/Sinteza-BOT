@@ -19,7 +19,7 @@ export default function GET(req: NextApiRequest, res: NextApiResponse) {
     path.join(process.cwd(), 'scripts/start_bot_checks.py'),
     JSON.stringify(botFormData)
   ]);
-  cmd.stdin.write(JSON.stringify(botFormData));
+  cmd.stdin.write(JSON.stringify({ ...botFormData, device: botFormData.device.id }));
   cmd.stdin.end()
   transferChildProcessOutput(cmd, res);
 }

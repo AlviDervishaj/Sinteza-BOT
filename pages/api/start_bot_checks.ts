@@ -15,8 +15,8 @@ export default function GET(req: NextApiRequest, res: NextApiResponse) {
     return res.end('[ERROR] Username is not valid.');
   }
   log('[INFO] Starting checks ...');
-  const cmd = spawn('python3', [
-    path.join(process.cwd(), 'scripts/start_bot_checks.py'),
+  const cmd = spawn('python', [
+    path.join(process.cwd(), 'scripts', 'start_bot_checks.py'),
     JSON.stringify(botFormData)
   ]);
   cmd.stdin.write(JSON.stringify({ ...botFormData, device: botFormData.device.id }));

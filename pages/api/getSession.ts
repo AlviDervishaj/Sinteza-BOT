@@ -10,8 +10,8 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
     if (!data.username || data.username.trim() === "") {
         return res.end("[ERROR] Can not read file when username is not provided");
     }
-    const _path: string = path.join(process.cwd(), 'scripts/sessions.py');
-    const cmd: ChildProcessWithoutNullStreams = spawn(`python3 ${_path}`, { shell: true });
+    const _path: string = path.join(process.cwd(), 'scripts', 'sessions.py');
+    const cmd: ChildProcessWithoutNullStreams = spawn(`python ${_path}`, { shell: true });
     log(`[INFO] Getting session for ${data.username} ...`);
     cmd.stdin.write(JSON.stringify(data));
     cmd.stdin.end();

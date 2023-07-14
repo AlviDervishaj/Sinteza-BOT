@@ -11,7 +11,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     }
     else {
         log(`[INFO] Getting bots ...`);
-        const cmd: ChildProcessWithoutNullStreams = spawn(`ps -aux | egrep 'python3 ${path.join(process.cwd(),
+        const cmd: ChildProcessWithoutNullStreams = spawn(`ps -aux | egrep 'python ${path.join(process.cwd(),
             'Bot/run.py')} --config ${path.join(process.cwd(),
                 'Bot', 'accounts', username, 'config.yml')}'`, { shell: true });
         transferChildProcessOutput(cmd, res);

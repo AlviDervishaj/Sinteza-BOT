@@ -318,13 +318,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const listOfDevices: string = (await result.text())
       .replace("List of devices attached", "")
       .replace("device", "");
-    const devicesID = listOfDevices.trim().split("\n").map((d) => {
-      const temp = d.replace("\r" ,"");
-      const _t_stripped_temp = temp.replace("\t", "")
-      return _t_stripped_temp.replace("device", "");
-
-    });
-    console.log({devicesID});
+    const devicesID = listOfDevices
+      .trim()
+      .split("\n")
+      .map((d) => {
+        const temp = d.replace("\r", "");
+        const _t_stripped_temp = temp.replace("\t", "");
+        return _t_stripped_temp.replace("device", "");
+      });
     // map devices to name. from the json file
     let devices: { id: string; name: string }[] = [];
     devicesID.forEach((id) => {

@@ -162,7 +162,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const removeProcessFromPool = (_process: Process) => {
     setProcesses((previous) =>
       previous.filter(
-        (process) => process.status !== "RUNNING" && _process !== process
+        (process) =>
+          process.status !== "RUNNING" &&
+          process.status !== "WAITING" &&
+          _process !== process
       )
     );
   };

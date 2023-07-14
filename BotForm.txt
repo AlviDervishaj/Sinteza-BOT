@@ -1,0 +1,65 @@
+const callApi = async () => {
+    if (alreadyCalled) return;
+    if (formData.username === "")
+      return displayError("Please enter a username.");
+    setAlreadyCalled(true);
+    logData("[INFO] Checking if another process is currently running ...");
+    // check if another process is running
+    const isAnotherProcessRunning = await fetch(
+      `${condition}api/fetchProcesses`
+    );
+    const { processes }: { processes: Process[] } =
+      await isAnotherProcessRunning.json();
+    const process: Process | undefined = processes.find(
+      (process) => process.username === formData.username
+    );
+    if (process) {
+      displayError(
+        `A bot is already running on this user : ${formData.username}`
+      );
+      process.cmd.stdout
+        .setEncoding("utf-8")
+        .on("data", (data: string) => logData(data));
+      displayError(`Process terminated.`);
+    }
+    logData("[INFO] Running checks ...");
+    const result = await fetch(
+      `${condition}api/start_bot_checks?${new URLSearchParams({
+        username: formData.username,
+      })}`
+    );
+    const data: string = await result.text();
+    // format data
+    logData(data);
+    logData("[INFO] Starting bot ...");
+    const start_bot_result = await fetch(
+      `${condition}api/start_bot?${new URLSearchParams({
+        username: formData.username,
+      })}`
+    );
+    const start_bot_data: string = await start_bot_result.text();
+    logData(`[INFO] Bot started for : ${formData.username}`);
+    logData(start_bot_data);
+    logData(`[INFO] Bot finished for : ${formData.username}`);
+    setAlreadyCalled(false);
+}
+
+const killProcess = async () => {
+    setIsTerminating(true);
+    if (!formData.username || formData.username.trim() === "") {
+      setIsTerminating(false);
+      return displayError("Please enter a username.");
+    }
+    // terminated process
+    const terminate = await fetch(
+      `${condition}api/terminateProcess?${new URLSearchParams({
+        username: formData.username,
+      })}`
+    );
+    const tData = await terminate.text();
+    console.log({ tData });
+    logData(tData);
+    setIsTerminating(false);
+    displayError("Process terminated");
+    return;
+  };

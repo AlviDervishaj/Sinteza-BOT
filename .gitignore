@@ -19,7 +19,6 @@ Bot/!config-examples/*
 Bot/Pipfile
 Bot/Pipfile.lock
 *.pdf
-*.txt
 *.mp4
 *.log*
 *.ini

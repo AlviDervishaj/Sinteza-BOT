@@ -72,6 +72,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       }
     );
     const data = await result.text();
+    console.log({ data });
     const _processes = data.split("\n").map((p) =>
       p
         .split("   ")

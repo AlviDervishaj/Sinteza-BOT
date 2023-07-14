@@ -13,8 +13,7 @@ type Props = {
   getDevices: () => void;
   error: string;
   logData: (data: string) => void;
-  setDevices: Dispatch<SetStateAction<string[]>>;
-  devices: string[];
+  devices: { id: string; name: string }[];
   processes: Process[];
   setProcesses: Dispatch<SetStateAction<Process[]>>;
   displayError: (error: string) => void;
@@ -29,7 +28,6 @@ const AddBot: NextPage<Props> = ({
   setError,
   getDevices,
   processes,
-  setDevices,
   devices,
   addToPool,
   updateProcessResult,
@@ -50,7 +48,6 @@ const AddBot: NextPage<Props> = ({
         displayError={displayError}
         setError={setError}
         processes={processes}
-        setDevices={setDevices}
         devices={devices}
         killBot={killBot}
         addToPool={addToPool}

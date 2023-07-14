@@ -1,11 +1,10 @@
 
 // uuid
-import { v5 as uuidv5 } from "uuid";
 
 import { ConfigRows, ConfigRowsSkeleton, Session, SessionConfig, SessionConfigSkeleton, SessionProfile, SessionProfileSkeleton } from "./Types";
 let id = 0;
 export type ProcessSkeleton = {
-  _device: string,
+  _device: { id: string, name: string },
   _result: string,
   _config: SessionConfig,
   _user: {
@@ -21,7 +20,7 @@ export type ProcessSkeleton = {
 
 }
 export class Process {
-  private _device: string;
+  private _device: { id: string, name: string };
   private _result: string;
   private _total: Session[];
   private _followers: number;
@@ -36,7 +35,7 @@ export class Process {
   private _profile: SessionProfile;
 
 
-  constructor(device: string, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string, total: Session[], following: number = 0, followers: number = 0, session: ConfigRowsSkeleton, config: SessionConfig = SessionConfigSkeleton, profile: SessionProfile = SessionProfileSkeleton) {
+  constructor(device: { id: string, name: string }, username: string, membership: "PREMIUM" | "FREE", status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED", result: string, total: Session[], following: number = 0, followers: number = 0, session: ConfigRowsSkeleton, config: SessionConfig = SessionConfigSkeleton, profile: SessionProfile = SessionProfileSkeleton) {
     this._user = {
       username,
       membership
@@ -56,7 +55,7 @@ export class Process {
   get device() {
     return this._device;
   }
-  set device(device: string) {
+  set device(device: { id: string, name: string }) {
     this._device = device;
     return;
   }
@@ -170,8 +169,8 @@ export class ProcessesPool {
   }
 
   // remove a process based on device
-  removeProcessByDevice(device: string): Process[] {
-    const index = this._processes.findIndex(process => process.device === device);
+  removeProcessByDevice(device: { id: string, name: string }): Process[] {
+    const index = this._processes.findIndex(process => process.device.id === device.id);
     if (index > -1) {
       this._processes.splice(index, 1);
     }
@@ -187,8 +186,8 @@ export class ProcessesPool {
   }
 
   // remove a process by useranme and device
-  removeProcessByUsernameAndDevice(username: string, device: string): Process[] {
-    const index = this._processes.findIndex(process => process.device === device && process.username === username);
+  removeProcessByUsernameAndDevice(username: string, device: { id: string, name: string }): Process[] {
+    const index = this._processes.findIndex(process => process.device.id === device.id && process.username === username);
     if (index > -1) {
       this._processes.splice(index, 1);
     }
@@ -218,13 +217,13 @@ export class ProcessesPool {
   }
 
   // find process by device
-  findOneProcessByDevice(device: string): Process | undefined {
-    return this._processes.find(process => process.device === device);
+  findOneProcessByDevice(device: { id: string, name: string }): Process | undefined {
+    return this._processes.find(process => process.device.id === device.id);
   }
 
   // find multiple processes by device
-  findMultipleProcessesByDevice(device: string): Process[] {
-    return this._processes.filter(process => process.device === device);
+  findMultipleProcessesByDevice(device: { id: string, name: string }): Process[] {
+    return this._processes.filter(process => process.device.id === device.id);
   }
 
   // find process by username

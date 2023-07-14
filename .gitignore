@@ -60,4 +60,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/accounts/*
+accounts
+logs
+crashes
+test.sh

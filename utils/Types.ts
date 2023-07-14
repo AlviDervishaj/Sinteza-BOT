@@ -8,7 +8,7 @@ export type Response = {
 
 export type BotFormData = {
   username: string;
-  device: string;
+  device: { id: string, name: string };
   password?: string;
   "speed-multiplier"?: number;
   "truncate-sources"?: string,

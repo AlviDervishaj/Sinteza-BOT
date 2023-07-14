@@ -27,8 +27,7 @@ type Props = {
   logData: (data: string) => void;
   getDevices: () => void;
   displayError: (error: string) => void;
-  setDevices: Dispatch<SetStateAction<string[]>>;
-  devices: string[];
+  devices: { id: string; name: string }[];
   processes: Process[];
   addToPool: (process: Process) => void;
   killBot: (event: any, process: Process) => void;
@@ -39,7 +38,6 @@ export const BotForm: FC<Props> = ({
   setError,
   getDevices,
   devices,
-  setDevices,
   logData,
   processes,
   killBot,
@@ -50,7 +48,7 @@ export const BotForm: FC<Props> = ({
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
-    device: "",
+    device: { id: "", name: "" },
     password: "",
     "speed-multiplier": 1,
     "truncate-sources": "",
@@ -62,15 +60,12 @@ export const BotForm: FC<Props> = ({
   });
   useEffect(() => {
     getDevices();
-    return () => {
-      setDevices([]);
-    };
   }, []);
   const checkFormData = () => {
     if (!formData.username || formData.username.trim() === "") {
       return setError("Please enter a username.");
     }
-    if (!formData.device || formData.device.trim() === "") {
+    if (!formData.device || formData.device.name.trim() === "") {
       return setError("Please select a device.");
     }
     if (!formData.password || formData.password.trim() === "") {
@@ -187,18 +182,21 @@ export const BotForm: FC<Props> = ({
                   labelId="select-device"
                   label="Select a device"
                   required
-                  value={formData.device}
+                  value={formData.device.id}
                   onChange={(event) =>
                     setFormData((previousData: BotFormData) => ({
+                      // find the device by id
                       ...previousData,
-                      device: event.target.value,
+                      device: devices.filter(
+                        (device) => device.id === event.target.value
+                      )[0],
                     }))
                   }
                 >
                   {devices &&
                     devices.map((device) => (
-                      <MenuItem key={device} value={device}>
-                        {device}
+                      <MenuItem key={device.id} value={device.id}>
+                        {device.name}
                       </MenuItem>
                     ))}
                 </Select>

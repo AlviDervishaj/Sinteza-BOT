@@ -76,7 +76,7 @@ export const Accordion: FC<Props> = ({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Typography>Device: {process.device}</Typography>
+            <Typography>Device: {process.device.name}</Typography>
             <Output data={process.result} />
             <Button
               variant="outlined"

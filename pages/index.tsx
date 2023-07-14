@@ -4,7 +4,6 @@ type Props = {
   devices: string[];
   device: string;
   getDevices: () => void;
-  setDevice: Dispatch<SetStateAction<string>>;
 };
 export default function Home({}: Props) {
   return (

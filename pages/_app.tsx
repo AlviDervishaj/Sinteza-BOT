@@ -157,7 +157,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   );
 
   // Remove previous Process
-  const removePreviousProcess = (_process: Process) => {
+  const removeProcessFromPool = (_process: Process) => {
     setProcesses((previous) =>
       previous.filter(
         (process) => process.status !== "RUNNING" && _process !== process
@@ -191,9 +191,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         const _previous = previous.map((process) => {
           if (
             process.username === _process.username &&
+            process.device.id === _process.device.id &&
             process.status !== "RUNNING"
           ) {
             process = _process;
+            process.status = _process.status;
+            process.session = _process.session;
+            process.followers = _process.followers;
+            process.following = _process.following;
           }
           return process;
         });
@@ -454,7 +459,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               killBot={killBot}
               noProcessesText="No Processes currently running..."
               processes={processes}
-              removePreviousProcess={removePreviousProcess}
+              removeProcessFromPool={removeProcessFromPool}
             />
           </Box>
         </Box>

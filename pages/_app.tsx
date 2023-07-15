@@ -57,60 +57,60 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   //   console.log({ data: result.data });
   // };
 
-  const killBot = async (event: any, proc: Process) => {
-    event.preventDefault();
-    // call terminateProcess
-    const result = await fetch(
-      `${URLcondition}api/fetchProcesses?${new URLSearchParams({
-        username: proc.username,
-      })}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "text/plain",
-        },
-      }
-    );
-    const data = await result.text();
-    console.log({ data });
-    const _processes = data.split("\n").map((p) =>
-      p
-        .split("   ")
-        .filter((s) => s.length)
-        .join(" ")
-    );
-    // remove all elements except the last one.
-    const command = _processes[0];
-    // get pid of command
-    const pid = command
-      .split(" ")
-      .filter((elem) => elem.trim() !== "")[1]
-      .trim();
-    await fetch(
-      `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "text/plain",
-        },
-      }
-    );
-    const _data: GetSessionFromPython = {
-      username: proc.username,
-      followers_now: proc.followers,
-      following_now: proc.following,
-    };
-    const r = await axios.post(`${URLcondition}api/getSession`, _data);
-    const d = r.data as ConfigRowsSkeleton;
-    proc.session = d;
-    proc.status = "STOPPED";
-    addToPool(proc);
-    logData("[INFO] Bot stopped.");
-    // remove process
-    stopProcess(proc);
-    // add it to previous processes
-    addPreviousProcess(proc);
-  };
+  // const killBot = async (event: any, proc: Process) => {
+  //   event.preventDefault();
+  //   // call terminateProcess
+  //   const result = await fetch(
+  //     `${URLcondition}api/fetchProcesses?${new URLSearchParams({
+  //       username: proc.username,
+  //     })}`,
+  //     {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "text/plain",
+  //       },
+  //     }
+  //   );
+  //   const data = await result.text();
+  //   console.log({ data });
+  //   const _processes = data.split("\n").map((p) =>
+  //     p
+  //       .split("   ")
+  //       .filter((s) => s.length)
+  //       .join(" ")
+  //   );
+  //   // remove all elements except the last one.
+  //   const command = _processes[0];
+  //   // get pid of command
+  //   const pid = command
+  //     .split(" ")
+  //     .filter((elem) => elem.trim() !== "")[1]
+  //     .trim();
+  //   await fetch(
+  //     `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+  //     {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "text/plain",
+  //       },
+  //     }
+  //   );
+  //   const _data: GetSessionFromPython = {
+  //     username: proc.username,
+  //     followers_now: proc.followers,
+  //     following_now: proc.following,
+  //   };
+  //   const r = await axios.post(`${URLcondition}api/getSession`, _data);
+  //   const d = r.data as ConfigRowsSkeleton;
+  //   proc.session = d;
+  //   proc.status = "STOPPED";
+  //   addToPool(proc);
+  //   logData("[INFO] Bot stopped.");
+  //   // remove process
+  //   stopProcess(proc);
+  //   // add it to previous processes
+  //   addPreviousProcess(proc);
+  // };
   // Remove process
   const stopProcess = (_process: Process) => {
     getSession(_process);
@@ -246,6 +246,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               });
           } else if (output.includes("WARNING | App has crashed")) {
             process.status = "STOPPED";
+            console.log({output});
             process.total_crashes += 1;
             addToPool(process);
           } else if (output.includes("INFO | -------- FINISH:")) {
@@ -444,7 +445,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           setDevices={setDevices}
           getDevices={getDevices}
           devices={devices}
-          killBot={killBot}
+          // killBot={killBot}
           addToPool={addToPool}
           updateProcessResult={updateProcessResult}
           processes={processes}
@@ -472,7 +473,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           >
             <ShowProcesses
               text="Processes"
-              killBot={killBot}
+              // killBot={killBot}
               noProcessesText="No Processes currently running..."
               processes={processes}
               removeProcessFromPool={removeProcessFromPool}

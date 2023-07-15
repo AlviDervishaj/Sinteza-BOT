@@ -14,13 +14,13 @@ import { Output } from "../../Output";
 type Props = {
   removeProcessFromPool: (process: Process) => void;
   processes: Process[];
-  killBot: (event: any, process: Process) => void;
+  // killBot: (event: any, process: Process) => void;
 };
 
 export const Accordion: FC<Props> = ({
   processes,
   removeProcessFromPool,
-  killBot,
+  // killBot,
 }) => {
   const [expanded, setExpanded] = useState<string | false>(false);
 
@@ -79,7 +79,7 @@ export const Accordion: FC<Props> = ({
           <AccordionDetails>
             <Typography>Device: {process.device.name}</Typography>
             <Output data={process.result} />
-            <Tooltip title="Stops bot from running." arrow>
+            {/* <Tooltip title="Stops bot from running." arrow>
               <Button
                 variant="outlined"
                 color="error"
@@ -101,7 +101,7 @@ export const Accordion: FC<Props> = ({
               >
                 Remove
               </Button>
-            </Tooltip>
+            </Tooltip> */}
           </AccordionDetails>
         </A>
       ))}

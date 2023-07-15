@@ -9,14 +9,14 @@ type Props = {
   noProcessesText: string;
   text: string;
   removeProcessFromPool: (process: Process) => void;
-  killBot: (event: any, proc: Process) => void;
+  // killBot: (event: any, proc: Process) => void;
 };
 
 export const ShowProcesses: FC<Props> = ({
   processes,
   noProcessesText,
   removeProcessFromPool,
-  killBot,
+  // killBot,
   text,
 }) => {
   if (!processes || processes.length === 0) {
@@ -34,7 +34,7 @@ export const ShowProcesses: FC<Props> = ({
       </Typography>
       <Accordion
         processes={processes}
-        killBot={killBot}
+        // killBot={killBot}
         removeProcessFromPool={removeProcessFromPool}
       />
     </Box>

@@ -37,19 +37,19 @@ truncate-sources: 2-5
 ##############################################################################
 
 ## Interaction (active jobs)
-blogger-followers: [username1, username2]
-blogger-following: [username1, username2]
-blogger-post-likers: [username1, username2]
-blogger: [username1, username2]
-hashtag-likers-top: [hashtag1, hashtag2]
-hashtag-likers-recent: [hashtag1, hashtag2]
-hashtag-posts-top: [hashtag1, hashtag2]
-hashtag-posts-recent: [hashtag1, hashtag2]
-place-posts-top: [place1, place2]
-place-posts-recent: [place1, place2]
-place-likers-top: [place1, place2]
-place-likers-recent: [place1, place2]
-interact-from-file: [usernames1.txt 10-15, usernames2.txt 3]
+blogger-followers: ''
+# blogger-following: [username1, username2]
+# blogger-post-likers: [username1, username2]
+# blogger: [username1, username2]
+hashtag-likers-top: ''
+# hashtag-likers-recent: [hashtag1, hashtag2]
+# hashtag-posts-top: [hashtag1, hashtag2]
+# hashtag-posts-recent: [hashtag1, hashtag2]
+# place-posts-top: [place1, place2]
+# place-posts-recent: [place1, place2]
+# place-likers-top: [place1, place2]
+# place-likers-recent: [place1, place2]
+# interact-from-file: [usernames1.txt 10-15, usernames2.txt 3]
 posts-from-file: posts.txt
 feed: 2-5 # is the number of likes you will give in feed
 # welcoming: 3-5 # welcoming new members with sentences in pm_welcome.txt inside account folder
@@ -64,20 +64,20 @@ mute-posts-after-follow: false
 mute-stories-after-follow: false
 
 ## Unfollow (unfollow jobs)
-unfollow: 10-20
-unfollow-any: 10-20
-unfollow-non-followers: 10-20
+unfollow: 0
+unfollow-any: 0
+unfollow-non-followers: '0'
 unfollow-any-non-followers: 10-20
 unfollow-any-followers: 10-20
-unfollow-from-file: [usernames1.txt 7-15, usernames2.txt 6]
+# unfollow-from-file: [usernames1.txt 7-15, usernames2.txt 6]
 
 ## Special modifier for unfollow jobs
 sort-followers-newest-to-oldest: false
 unfollow-delay: 15
-unfollow-skip-limit: 10
+unfollow-skip-limit: '0'
 
 ## Remove followers (active jobs)
-remove-followers-from-file: [remove1.txt 5-10, remove2.txt 6]
+#remove-followers-from-file: [remove1.txt 5-10, remove2.txt 6]
 
 ## Special modifier for remove followers
 delete-removed-followers: true
@@ -142,6 +142,6 @@ end-if-pm-limit-reached: false
 ##############################################################################
 
 working-hours: [10.15-16.40, 18.15-22.46]
-time-delta: 10-15
+time-delta: 0
 repeat: 280-320
-total-sessions: 1 # -1 or commented for infinite sessions
+total-sessions: -1 # -1 or commented for infinite sessions

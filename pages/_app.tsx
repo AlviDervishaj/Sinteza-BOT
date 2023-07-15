@@ -162,7 +162,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const removeProcessFromPool = (_process: Process) => {
     setProcesses((previous) =>
       previous.filter(
-        (process) => process.status !== "RUNNING" && _process !== process
+        (process) =>
+          process.status !== "RUNNING" &&
+          process.status !== "WAITING" &&
+          _process !== process
       )
     );
   };
@@ -248,7 +251,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             process.status = "STOPPED";
             console.log({output});
             process.total_crashes += 1;
-            addToPool(process);
+            axios
+              .post(`${URLcondition}api/sendStatusToTelegram`, {
+                username: process.username,
+              })
+              .then(async (res) => {
+                process.result += await res.data;
+                addToPool(process);
+              });
           } else if (output.includes("INFO | -------- FINISH:")) {
             process.status = "FINISHED";
             const _data: GetSessionFromPython = {

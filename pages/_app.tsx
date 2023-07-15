@@ -250,7 +250,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           } else if (output.includes("WARNING | App has crashed")) {
             process.status = "STOPPED";
             process.total_crashes += 1;
-            addToPool(process);
+            axios
+              .post(`${URLcondition}api/sendStatusToTelegram`, {
+                username: process.username,
+              })
+              .then(async (res) => {
+                process.result += await res.data;
+                addToPool(process);
+              });
           } else if (output.includes("INFO | -------- FINISH:")) {
             process.status = "FINISHED";
             const _data: GetSessionFromPython = {

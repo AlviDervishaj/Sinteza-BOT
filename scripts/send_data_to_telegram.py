@@ -14,8 +14,8 @@ if (username == ""):
     exit()
 
 
-sessionPath = os.path.join(os.path.dirname(
-    os.path.dirname(__file__)), 'Bot', 'accounts', username, 'telegram.yml')
+telegramPath = os.path.join(os.path.dirname(
+    os.path.dirname(__file__)), 'accounts', username, 'telegram.yml')
 
 
 class SendTelegramEndSession():
@@ -24,7 +24,7 @@ class SendTelegramEndSession():
 
         def telegram_bot_sendtext(text):
             with open(
-                sessionPath, "r", encoding="utf-8"
+                telegramPath, "r", encoding="utf-8"
             ) as stream:
                 try:
                     config = yaml.safe_load(stream)

@@ -12,6 +12,9 @@ LIST_OF_FILES = ['blacklist.txt', 'comments_list.txt', 'config.yml',
 
 AVAILABLE_FILES = []
 
+command = "copy" if sys.platform.startswith(
+    'win32') or sys.platform.startswith('cygwin') else "cp"
+
 
 def compare(x, y): return collections.Counter(x) == collections.Counter(y)
 
@@ -20,10 +23,9 @@ def _print(value: str):
     print(value, flush=True)
 
 
-iBot_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'Bot')
 botConfig = sys.stdin.read()
 customConfig = json.loads(botConfig)
-
+print(botConfig)
 if not customConfig['username']:
     _print("Please enter a valid instagram username")
     exit()
@@ -33,28 +35,30 @@ if not customConfig['device']:
 
 # Remaping keys
 if customConfig['blogger-followers']:
-    customConfig['blogger-followers'] = customConfig['blogger-followers'].split(
+    customConfig['blogger-followers'] = customConfig['blogger-followers'][0].split(
         ",")
 if customConfig['hashtag-likers-top']:
-    customConfig['hashtag-likes-top'] = customConfig['hashtag-likes-top'].split(
+    customConfig['hashtag-likers-top'] = customConfig['hashtag-likers-top'][0].split(
         ",")
-if customConfig['working-hours']:
+if type(customConfig['working-hours']) == list and len(customConfig['working-hours']) == 0:
+    customConfig['working-hours'] = ["8.30-16.40", "18.15-22.46"]
+elif customConfig['working-hours']:
     customConfig['working-hours'] = customConfig['working-hours'][0].split(
         ",")
-elif type(customConfig['working-hours']) == list and len(customConfig['working-hours']) == 0:
-    customConfig['working-hours'] = ["10.15-16.40", "18.15-22.46"]
-
-# Change username in config.yml file
 
 
 def change_keys_in_config(username):
-    config_path = os.path.join(os.path.dirname(os.path.dirname(
-        __file__)), 'Bot', 'accounts', username, 'config.yml')
     '''
     Change config.yml file based on username
     '''
-    with open(config_path) as fp:
-        data = yaml.load(fp)
+    config_path = os.path.join(os.path.dirname(os.path.dirname(
+        __file__)), 'accounts', username, 'config.yml')
+    try:
+        with open(config_path) as fp:
+            data = yaml.load(fp)
+    except Exception as e:
+        _print(f"[ERROR] {e}")
+        exit()
 
     for config in customConfig:
         if config in data:
@@ -93,23 +97,53 @@ def make_config(_instagram_username):
         return "[ERROR] Invalid username."
     for file in LIST_OF_FILES:
         config_path = os.path.join(os.path.dirname(os.path.dirname(
-            __file__)), 'Bot', 'accounts', _instagram_username, file)
+            __file__)), 'accounts', _instagram_username, file)
         default_path = os.path.join(os.path.dirname(os.path.dirname(
             __file__)), 'Bot', 'config-examples', file)
         if (file not in AVAILABLE_FILES):
             _print(
                 f"[INFO] Copying file from  : {default_path} to {config_path}")
             # copy config files to that dir
-            os.popen(f'copy {default_path} {config_path}')
+            os.popen(f'{command} {default_path} {config_path}')
         else:
             _print(f"[INFO] File {file} already exists.")
     return "[INFO] Success"
 
+# make the accounts folder and the user folder
+
+
+def make_directories(_username):
+    accounts_dir = os.path.join(os.path.dirname(os.path.dirname(
+        __file__)), 'accounts')
+    if (os.path.isdir(accounts_dir)):
+
+        user_dir = os.path.join(os.path.dirname(os.path.dirname(
+            __file__)), 'accounts', _username)
+        if (os.path.isdir(user_dir)):
+            return True
+        else:
+            os.mkdir(user_dir)
+            return True
+    else:
+        os.mkdir(accounts_dir)
+        os.mkdir(user_dir)
+        return True
+
+
+# check base accounts folder
+if (os.path.exists(os.path.join(os.path.dirname(os.path.dirname(
+        __file__)), 'accounts'))):
+    _print("[INFO] Folder located.")
+else:
+    _print("[INFO] Creating accounts folder.")
+    os.mkdir(os.path.join(os.path.dirname(os.path.dirname(
+        __file__)), 'accounts'))
+    _print("[INFO] Folder created.")
 
 # check accounts/username folder.
 user_dir = os.path.join(os.path.dirname(os.path.dirname(
-    __file__)), 'Bot', 'accounts', customConfig['username'])
-if os.path.isdir(user_dir):
+    __file__)), 'accounts', customConfig['username'])
+if os.path.exists(user_dir):
     _print("[INFO] Folder located.")
     _instagram_client_config_files = os.listdir(
         user_dir)
@@ -123,13 +157,12 @@ if os.path.isdir(user_dir):
         _print("[INFO] Config is not correct. ")
         _print("[INFO] Replacing files...")
         make_config(customConfig['username'])
+        change_keys_in_config(customConfig['username'])
     _print("[INFO] End")
 else:
-    # folder with username does not exist. Create one
     os.mkdir(user_dir)
-    AVAILABLE_FILES = []
-    # Make the config
+    _print("[INFO] Folder created.")
+    _print("[INFO] Creating config files...")
     make_config(customConfig['username'])
-    # Change username
     change_keys_in_config(customConfig['username'])
     _print("[INFO] End")

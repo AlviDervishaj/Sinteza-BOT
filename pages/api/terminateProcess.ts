@@ -6,11 +6,13 @@ import { transferChildProcessOutput } from '../../utils/shell';
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   const pid: string | null = req.query.pid as string;
   if (!pid) {
-    return res.end("[ERROR] Can not kill bot when pid is not provided");
+    res.end("[ERROR] Can not kill bot when pid is not provided");
+    return;
   }
   else {
     log(`[INFO] Killing bot...`);
-    const cmd: ChildProcessWithoutNullStreams = spawn(`taskkill /F /PID  ${pid}`, { shell: true });
+    // taskkill /F /PID
+    const cmd: ChildProcessWithoutNullStreams = spawn(`kill -9 ${pid}`, { shell: true });
     log('[INFO] Killed bot');
     transferChildProcessOutput(cmd, res);
   }

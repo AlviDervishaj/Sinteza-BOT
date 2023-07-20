@@ -10,10 +10,12 @@ export default function POST(req: NextApiRequest, res: NextApiResponse) {
   const botFormData: BotFormData = req.body;
   if (typeof botFormData.username !== 'string' || botFormData.username.trim() === "") {
     res.status(400).json({ error: '[ERROR] Username is not valid.' });
-    return res.end();
+    res.end();
+    return;
   }
   log('[INFO] Starting Bot ...');
-  const cmd: ChildProcessWithoutNullStreams = spawn(`python ${path.join(process.cwd(),
+  const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+  const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${path.join(process.cwd(),
     'scripts', 'start_bot.py',)
     }`,
     { shell: true }

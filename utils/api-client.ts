@@ -51,40 +51,6 @@ export const start_bot = async (
   }
   else return false;
 }
-
-export const readFromFile = async (device: string, onProgress: ProgressCallback) => {
-  const response: Response = await fetch(
-    `${URLcondition}api/read_from_file`, {
-    method: "POST",
-    cache: "no-cache",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ device }),
-  });
-  const reader = response.body?.getReader();
-  if (reader) {
-    const result = await streamResponse(reader, onProgress);
-    return result.split('\n').filter((line) => {
-      return !line.startsWith('[Error]')
-    }).join('\n')
-  }
-}
-
-export const writeToFile = async ({ text, device }: { text: string, device: string }) => {
-  const response: Response = await fetch(
-    `${URLcondition}api/write_to_file`, {
-    method: "POST",
-    cache: "no-cache",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ text, device }),
-  });
-  const data: { info: string, error?: string, code: number } = await response.json();
-  return data;
-}
-
 // Stream response chunk by chunk
 export const streamResponse = async (
   reader: ReadableStreamDefaultReader<Uint8Array>,

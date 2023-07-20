@@ -1,5 +1,32 @@
-import { FC, useState, useEffect } from "react";
-import type { Dispatch, MouseEvent, SetStateAction } from "react";
+// React
+import { FC, useState, useEffect, Dispatch, SetStateAction } from "react";
+
+// Notistack
+import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
+
+// Material UI
+import {
+  Button,
+  Container,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Tooltip,
+  Select,
+  TextField,
+  Typography,
+  Grid,
+  FormControlLabel,
+  FormGroup,
+  Switch,
+} from "@mui/material";
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs, { Dayjs } from "dayjs";
+import RelativeTime from "dayjs/plugin/relativeTime";
+import { Close } from "@mui/icons-material";
+import { useEffectOnce, useTimeout } from "usehooks-ts";
+
+// Utils
 import { Process } from "../utils/Process";
 import {
   BotFormData,
@@ -8,18 +35,6 @@ import {
   SessionProfileSkeleton,
 } from "../utils/Types";
 import { start_bot, start_bot_checks } from "../utils/api-client";
-import {
-  Button,
-  Container,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-  Grid,
-} from "@mui/material";
 
 type Props = {
   setError: (error: string) => void;
@@ -32,20 +47,43 @@ type Props = {
   addToPool: (process: Process) => void;
   killBot: (event: any, process: Process) => void;
   updateProcessResult: (process: Process, result: string) => void;
+  setScheduledProcesses: Dispatch<SetStateAction<Process | null>>;
+  scheduledProcesses: Process | null;
 };
+
+dayjs.extend(RelativeTime);
 
 export const BotForm: FC<Props> = ({
   setError,
   getDevices,
-  devices,
   logData,
+  devices,
+  setScheduledProcesses,
+  scheduledProcesses,
   processes,
-  killBot,
   addToPool,
   updateProcessResult,
 }) => {
+  const notifyActions = (id: SnackbarKey) => (
+    <>
+      <Button variant="text" color="inherit" onClick={() => closeSnackbar(id)}>
+        <Close color={"inherit"} />
+      </Button>
+    </>
+  );
+
+  const notify = (
+    message: SnackbarMessage,
+    variant: "error" | "info" | "default" | "success"
+  ) => {
+    enqueueSnackbar(message, { variant, action: notifyActions });
+    return;
+  };
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
+  const [isScheduled, setIsScheduled] = useState<boolean>(false);
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
+  const [scheduledTime, setScheduledTime] = useState<Dayjs | null>(dayjs());
+  const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
     device: { id: "", name: "" },
@@ -58,15 +96,20 @@ export const BotForm: FC<Props> = ({
     "unfollow-skip-limit": "",
     "working-hours": [],
   });
-  useEffect(() => {
+
+  const checkScheduledTime = (): dayjs.Dayjs | false => {
+    if (scheduledTime === null) return false;
+    return scheduledTime;
+  };
+  useEffectOnce(() => {
     getDevices();
-  }, []);
+  });
   const checkFormData = () => {
     if (!formData.username || formData.username.trim() === "") {
-      return setError("Please enter a username.");
+      return notify("Please enter a username.", "error");
     }
-    if (!formData.device || formData.device.name.trim() === "") {
-      return setError("Please select a device.");
+    if (!formData.device.id || formData.device.name.trim() === "") {
+      return notify("Please select a device.", "error");
     }
     if (!formData.password || formData.password.trim() === "") {
       logData("[INFO] Password: DEFAULT");
@@ -118,32 +161,124 @@ export const BotForm: FC<Props> = ({
     // const data = await result.text();
     // logData(data);
   };
-  const callApi = async (event: MouseEvent) => {
-    event.preventDefault();
+
+  const handleScheduledChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setIsScheduled(event.target.checked);
+  };
+
+  const checkIfDeviceIsBeingUsed = () => {
+    const p = processes.filter(
+      (p) =>
+        p.device.id === formData.device.id &&
+        (p.status === "RUNNING" || p.status === "WAITING")
+    );
+    if (p.length > 0) {
+      notify("Device is already in use !", "error");
+      return true;
+    } else return false;
+  };
+
+  const handleSchedule = (_isScheduled: dayjs.Dayjs | false) => {
+    if (_isScheduled !== false) {
+      const startTime = _isScheduled.valueOf();
+      const timeNow = dayjs().valueOf();
+      const millis = startTime - timeNow;
+      if (millis < 120000) {
+        notify("Starting bot now ...", "info");
+        return false;
+      }
+      notify("Bot scheduled !", "success");
+      return millis;
+    }
+    return false;
+  };
+
+  const callApi = async () => {
+    const _isScheduled = checkScheduledTime();
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;
     setAlreadyCalled(true);
+
+    logData("[INFO] Checking if device is available...");
+    if (checkIfDeviceIsBeingUsed()) {
+      return;
+    }
     logData("[INFO] Starting bot checks... ");
     await startBotChecks();
-    logData("[INFO] Starting bot...");
-    const p = new Process(
-      formData.device,
-      formData.username,
-      membership,
-      "RUNNING",
-      "",
-      [],
-      0,
-      0,
-      ConfigRows,
-      SessionConfigSkeleton,
-      SessionProfileSkeleton
-    );
-    start_bot(formData, (output: string) => {
-      updateProcessResult(p, output);
+    // cron job
+    const result = handleSchedule(_isScheduled);
+    if (result !== false && _isScheduled !== false) {
+      notify(
+        `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
+        "info"
+      );
+      setTimeout(() => {
+        logData("[INFO] Starting bot...");
+        if (
+          processes.filter(
+            (p) =>
+              p.username === formData.username &&
+              (p.status === "RUNNING" || p.status === "WAITING")
+          ).length > 0
+        ) {
+          notify("Bot is already running !", "error");
+          return;
+        }
+        const p = new Process(
+          formData.device,
+          formData.username,
+          membership,
+          "RUNNING",
+          "",
+          [],
+          0,
+          0,
+          ConfigRows,
+          SessionConfigSkeleton,
+          SessionProfileSkeleton
+        );
+        start_bot(formData, (output: string) => {
+          updateProcessResult(p, output);
+        });
+        notify("Bot started !", "success");
+        addToPool(p);
+        setAlreadyCalled(false);
+      }, result);
+      return;
+    } else {
+      logData("[INFO] Starting bot...");
+      if (
+        processes.filter(
+          (p) =>
+            p.username === formData.username &&
+            (p.status === "RUNNING" || p.status === "WAITING")
+        ).length > 0
+      ) {
+        notify("Bot is already running !", "error");
+        return;
+      }
+      const p = new Process(
+        formData.device,
+        formData.username,
+        membership,
+        "RUNNING",
+        "",
+        [],
+        0,
+        0,
+        ConfigRows,
+        SessionConfigSkeleton,
+        SessionProfileSkeleton
+      );
+      start_bot(formData, (output: string) => {
+        updateProcessResult(p, output);
+      });
+      notify("Bot started !", "success");
       addToPool(p);
-    });
-    setAlreadyCalled(false);
+      setAlreadyCalled(false);
+    }
   };
   return (
     <>
@@ -193,12 +328,15 @@ export const BotForm: FC<Props> = ({
                     }))
                   }
                 >
-                  {devices &&
+                  {devices.length > 0 ? (
                     devices.map((device) => (
                       <MenuItem key={device.id} value={device.id}>
                         {device.name}
                       </MenuItem>
-                    ))}
+                    ))
+                  ) : (
+                    <MenuItem value={""}>No devices found</MenuItem>
+                  )}
                 </Select>
               </FormControl>
               <Typography paragraph>
@@ -308,7 +446,7 @@ export const BotForm: FC<Props> = ({
               />
               <Typography paragraph>Format: Username1 ...</Typography>
             </Grid>
-            <Grid item>
+            <Grid item xs={6}>
               <TextField
                 type="text"
                 id="hashtagLikesTop"
@@ -320,7 +458,7 @@ export const BotForm: FC<Props> = ({
                   setFormData((previousData: BotFormData) => ({
                     ...previousData,
                     ["hashtag-likers-top"]: event.target.value
-                      .trim()
+                      .toString()
                       .split(" "),
                   }))
                 }
@@ -364,7 +502,7 @@ export const BotForm: FC<Props> = ({
                 }
                 placeholder="Unfollow skip limit"
               />
-              <Typography paragraph>Format: any</Typography>
+              <Typography paragraph>Format: Number</Typography>
             </Grid>
           </Grid>
           <Grid container spacing={3}>
@@ -386,28 +524,51 @@ export const BotForm: FC<Props> = ({
               />
               <Typography paragraph>Format: HH.MM-HH.MM HH.MM-HH.MM</Typography>
             </Grid>
+            <Grid item xs={6}>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={isScheduled}
+                      onChange={handleScheduledChange}
+                      inputProps={{ "aria-label": "controlled" }}
+                      size={"medium"}
+                    />
+                  }
+                  label="Schedule ?"
+                />
+              </FormGroup>
+              <DateTimePicker
+                label="Schedule Start Time"
+                disabled={!isScheduled}
+                disablePast
+                value={scheduledTime}
+                yearsPerRow={3}
+                closeOnSelect={false}
+                onChange={(newValue) => setScheduledTime(newValue)}
+              />
+            </Grid>
           </Grid>
           <Grid container spacing={3}>
-            <Grid item xs={4}>
-              <Button
-                disabled={alreadyCalled}
-                onClick={(event) => callApi(event)}
-                color="success"
-                variant="contained"
-              >
-                Start Bot
-              </Button>
+            <Grid item>
+              <Tooltip title="Start Bot">
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => callApi()}
+                >
+                  Start Bot
+                </Button>
+              </Tooltip>
             </Grid>
-            <Grid item xs={4}>
-              <Button
-                onClick={() => getDevices()}
-                color="info"
-                variant="contained"
-              >
-                Refresh Devices
-              </Button>
+            <Grid item>
+              <Tooltip title="Refresh Devices">
+                <Button variant="contained" color="info" onClick={getDevices}>
+                  Refresh Devices
+                </Button>
+              </Tooltip>
             </Grid>
-            <Grid item xs={4}>
+            {/* <Grid item xs={4}>
               <Button
                 onClick={(event) =>
                   killBot(
@@ -424,7 +585,7 @@ export const BotForm: FC<Props> = ({
               >
                 Kill Bot
               </Button>
-            </Grid>
+            </Grid> */}
           </Grid>
         </Grid>
       </Container>

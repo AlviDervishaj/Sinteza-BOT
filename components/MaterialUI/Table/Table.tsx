@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useState, useMemo } from "react";
+import { FC, useState, useMemo } from "react";
 // uuid
 import { v5 as uuidv5 } from "uuid";
 import {
@@ -7,10 +7,12 @@ import {
   GridColumnGroupingModel,
   GridToolbarContainer,
   GridToolbarExport,
+  GridToolbarQuickFilter,
+  GridToolbarFilterButton,
 } from "@mui/x-data-grid";
-import { Process, ProcessSkeleton } from "../../../utils/Process";
+import { Process } from "../../../utils/Process";
 import { Box } from "@mui/material";
-import { ConfigRowsSkeleton } from "../../../utils/Types";
+import { useEffectOnce } from "usehooks-ts";
 
 type Props = {
   processes: Process[];
@@ -20,23 +22,42 @@ type Props = {
 
 const GridToolbar = () => {
   return (
-    <GridToolbarContainer>
-      <GridToolbarExport />
+    <GridToolbarContainer
+      sx={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "row",
+        alignContent: "center",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "1rem",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignContent: "center",
+          alignItems: "center",
+          gap: "1rem",
+        }}
+      >
+        <GridToolbarExport />
+        <GridToolbarFilterButton />
+      </Box>
+      <GridToolbarQuickFilter />
     </GridToolbarContainer>
   );
 };
 
-export const ProcessesTable: FC<Props> = ({ processes }) => {
+export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
   const [loading, setLoading] = useState<boolean>(true);
-  const [rows, setRows] = useState<ConfigRowsSkeleton[] | []>(
-    processes.map((process) => process.session)
-  );
 
   const ConfigCols: GridColDef[] = [
     {
       field: "overview-username",
       headerName: "Username",
-      width: 200,
+      width: 100,
     },
     {
       field: "overview-status",
@@ -45,170 +66,120 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
     },
     {
       field: "overview-total-crashes",
-      headerName: "Total Crashes",
-      width: 150,
+      headerName: "Crashes",
+      width: 70,
     },
     {
       field: "overview-followers",
       headerName: "Followers",
-      width: 200,
+      width: 100,
     },
     {
       field: "overview-following",
       headerName: "Following",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-bottling",
-      headerName: "Minutes of Bottling",
-      width: 250,
-    },
-    {
-      field: "last-session-activity-likes",
-      headerName: "Likes",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-follows",
-      headerName: "Follows",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-unfollows",
-      headerName: "Unfollows",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-stories-watched",
-      headerName: "Stories Watched",
-      width: 250,
-    },
-    {
-      field: "last-session-activity-comments-done",
-      headerName: "Comments Done",
-      width: 250,
-    },
-    {
-      field: "last-session-activity-pm-sent",
-      headerName: "PM Sent",
-      width: 200,
-    },
-    {
-      field: "today-session-activity-bottling",
-      headerName: "Minutes of Bottling",
-      width: 250,
-    },
-    {
-      field: "today-session-activity-likes",
-      headerName: "Likes",
-      width: 200,
-    },
-    {
-      field: "today-session-activity-follows",
-      headerName: "Follows",
-      width: 200,
-    },
-    {
-      field: "today-session-activity-unfollows",
-      headerName: "Unfollows",
-      width: 250,
-    },
-    {
-      field: "today-session-activity-stories-watched",
-      headerName: "Stories Watched",
-      width: 250,
-    },
-    {
-      field: "today-session-activity-pm-sent",
-      headerName: "PM Sent",
-      width: 200,
+      width: 100,
     },
     {
       field: "trends-new-followers-today",
-      headerName: "New Followers Today",
-      width: 260,
+      headerName: "Today",
+      width: 60,
     },
     {
       field: "trends-new-followers-past-3-days",
-      headerName: "New Followers past 3 days",
-      width: 270,
+      headerName: "3 days",
+      width: 60,
     },
     {
       field: "trends-new-followers-past-week",
-      headerName: "New Followers past week",
-      width: 260,
+      headerName: "Past Week",
+      width: 90,
     },
     {
-      field: "trends-milestone",
-      headerName: "Milestone",
-      width: 200,
-    },
-    {
-      field: "weekly-average-bottling",
-      headerName: "Minutes of Bottling",
-      width: 260,
+      field: "weekly-average-botting",
+      headerName: "Botting",
+      width: 60,
     },
     {
       field: "weekly-average-followers-per-day",
-      headerName: "Followers per day",
-      width: 220,
+      headerName: "Followers/day",
+      width: 120,
     },
     {
       field: "weekly-average-likes",
       headerName: "Likes",
-      width: 200,
+      width: 40,
     },
     {
       field: "weekly-average-follows",
       headerName: "Follows",
-      width: 200,
+      width: 68,
     },
     {
       field: "weekly-average-unfollows",
       headerName: "Unfollows",
-      width: 200,
+      width: 80,
     },
     {
       field: "weekly-average-stories-watched",
-      headerName: "Stories Watched",
-      width: 200,
+      headerName: "Stories W",
+      width: 90,
     },
     {
-      field: "weekly-average-comments-done",
-      headerName: "Comments Done",
-      width: 200,
+      field: "last-session-activity-botting",
+      headerName: "Botting",
+      width: 60,
     },
     {
-      field: "weekly-average-pm-sent",
-      headerName: "PM Sent",
-      width: 200,
+      field: "last-session-activity-likes",
+      headerName: "Likes",
+      width: 50,
+    },
+    {
+      field: "last-session-activity-follows",
+      headerName: "Follows",
+      width: 68,
+    },
+    {
+      field: "last-session-activity-unfollows",
+      headerName: "Unfollows",
+      width: 80,
+    },
+    {
+      field: "last-session-activity-stories-watched",
+      headerName: "Stories W",
+      width: 90,
+    },
+    {
+      field: "today-session-activity-botting",
+      headerName: "Botting",
+      width: 60,
+    },
+    {
+      field: "today-session-activity-likes",
+      headerName: "Likes",
+      width: 50,
+    },
+    {
+      field: "today-session-activity-follows",
+      headerName: "Follows",
+      width: 68,
+    },
+    {
+      field: "today-session-activity-unfollows",
+      headerName: "Unfollows",
+      width: 80,
+    },
+    {
+      field: "today-session-activity-stories-watched",
+      headerName: "Stories W",
+      width: 90,
     },
   ];
 
-  useEffect(() => {
-    const p: ProcessSkeleton[] | [] = localStorage.getItem("processes")
-      ? JSON.parse(localStorage.getItem("processes") as string)
-      : [];
-    const proc =
-      p.length > 0
-        ? p.map((_p) => {
-            return new Process(
-              _p._device,
-              _p._user.username,
-              _p._user.membership,
-              _p._status,
-              _p._result,
-              _p._total,
-              _p._following,
-              _p._followers,
-              _p._session,
-              _p._config,
-              _p._profile
-            );
-          })
-        : [];
-    setRows(proc.length > 0 ? proc.map((process) => process.session) : []);
-  }, []);
+  useEffectOnce(() => {
+    processes.forEach((process) => getSession(process));
+    setTimeout(() => setLoading(false), 1000);
+  });
 
   const ConfigRows = useMemo(() => {
     return processes.map((process) => {
@@ -238,66 +209,61 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
       ],
     },
     {
-      groupId: "Last Session Activity",
-      description: "Last Session activity",
-      children: [
-        { field: "last-session-activity-bottling" },
-        { field: "last-session-activity-likes" },
-        { field: "last-session-activity-follows" },
-        { field: "last-session-activity-unfollows" },
-        { field: "last-session-activity-stories-watched" },
-        { field: "last-session-activity-comments-done" },
-        { field: "last-session-activity-pm-sent" },
-      ],
-    },
-    {
-      groupId: "Today's Session Activity",
-      description: "Today's Session activity",
-      children: [
-        { field: "today-session-activity-bottling" },
-        { field: "today-session-activity-likes" },
-        { field: "today-session-activity-follows" },
-        { field: "today-session-activity-unfollows" },
-        { field: "today-session-activity-stories-watched" },
-        { field: "today-session-activity-comments-done" },
-        { field: "today-session-activity-pm-sent" },
-      ],
-    },
-    {
       groupId: "Trends",
       description: "Trends",
       children: [
-        { field: "trends-new-followers-today" },
-        { field: "trends-new-followers-past-3-days" },
-        { field: "trends-new-followers-past-week" },
-        { field: "trends-milestone" },
+        {
+          groupId: "New Followers",
+          description: "New Followers",
+          children: [
+            { field: "trends-new-followers-today" },
+            { field: "trends-new-followers-past-3-days" },
+            { field: "trends-new-followers-past-week" },
+          ],
+        },
       ],
     },
     {
       groupId: "7-Day Average",
       description: "7-Day Average",
       children: [
-        { field: "weekly-average-bottling" },
+        { field: "weekly-average-botting" },
         { field: "weekly-average-followers-per-day" },
         { field: "weekly-average-likes" },
         { field: "weekly-average-follows" },
         { field: "weekly-average-unfollows" },
         { field: "weekly-average-stories-watched" },
-        { field: "weekly-average-comments-done" },
-        { field: "weekly-average-pm-sent" },
+      ],
+    },
+    {
+      groupId: "Last Session Activity",
+      description: "Last Session activity",
+      children: [
+        { field: "last-session-activity-botting" },
+        { field: "last-session-activity-likes" },
+        { field: "last-session-activity-follows" },
+        { field: "last-session-activity-unfollows" },
+        { field: "last-session-activity-stories-watched" },
+      ],
+    },
+    {
+      groupId: "Today's Session Activity",
+      description: "Today's Session activity",
+      children: [
+        { field: "today-session-activity-botting" },
+        { field: "today-session-activity-likes" },
+        { field: "today-session-activity-follows" },
+        { field: "today-session-activity-unfollows" },
+        { field: "today-session-activity-stories-watched" },
       ],
     },
   ];
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  });
-
   return (
     <Box
       sx={{
         height: "fit-content",
         width: "100%",
-        paddingBottom: "2rem",
+        padding: "2rem",
       }}
       id="processes-table"
     >
@@ -313,6 +279,17 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
         disableRowSelectionOnClick
         columnGroupingModel={ConfigColsGroupingModel}
         slots={{ toolbar: GridToolbar }}
+        slotProps={{
+          toolbar: {
+            showQuickFilter: true,
+            quickFilterProps: { debounceMs: 500 },
+          },
+        }}
+        initialState={{
+          sorting: {
+            sortModel: [{ field: "overview-username", sort: "desc" }],
+          },
+        }}
       />
     </Box>
   );

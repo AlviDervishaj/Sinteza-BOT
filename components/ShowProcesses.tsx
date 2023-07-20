@@ -10,6 +10,7 @@ type Props = {
   text: string;
   removeProcessFromPool: (process: Process) => void;
   killBot: (event: any, proc: Process) => void;
+  updateProcessResult: (process: Process, result: string) => void;
 };
 
 export const ShowProcesses: FC<Props> = ({
@@ -17,23 +18,27 @@ export const ShowProcesses: FC<Props> = ({
   noProcessesText,
   removeProcessFromPool,
   killBot,
+  updateProcessResult,
   text,
 }) => {
   if (!processes || processes.length === 0) {
     return (
-      <div className="w-fit h-fit mx-auto py-6">
-        <h2 className="text-xl tracking-wide">{noProcessesText}</h2>
-      </div>
+      <Box>
+        <Typography sx={{ letterSpacing: "0.05em" }}>
+          {noProcessesText}
+        </Typography>
+      </Box>
     );
   }
 
   return (
     <Box>
-      <Typography variant="h5" className="text-center" paddingBottom={"0.7rem"}>
+      <Typography variant="h5" paddingBottom={"0.7rem"}>
         {text}
       </Typography>
       <Accordion
         processes={processes}
+        updateProcessResult={updateProcessResult}
         killBot={killBot}
         removeProcessFromPool={removeProcessFromPool}
       />

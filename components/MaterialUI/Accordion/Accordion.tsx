@@ -7,22 +7,70 @@ import {
   Box,
   Button,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
-import { ExpandMore } from "@mui/icons-material";
+import { ExpandMore, Close } from "@mui/icons-material";
+
+import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
+
+// Axios
+import axios from "axios";
+
+// Components
 import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
+import { ChangeBotConfig } from "../Dialog/Dialog";
+import { Snackbar } from "../Snackbar";
+import { start_bot } from "../../../utils/api-client";
 type Props = {
   removeProcessFromPool: (process: Process) => void;
   processes: Process[];
+  updateProcessResult: (process: Process, result: string) => void;
   killBot: (event: any, process: Process) => void;
 };
 
 export const Accordion: FC<Props> = ({
   processes,
   removeProcessFromPool,
+  updateProcessResult,
   killBot,
 }) => {
   const [expanded, setExpanded] = useState<string | false>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { closeSnackbar, enqueueSnackbar } = useSnackbar();
+
+  const notifyActions = (id: SnackbarKey) => (
+    <>
+      <Button variant="text" color="inherit" onClick={() => closeSnackbar(id)}>
+        <Close color={"inherit"} />
+      </Button>
+    </>
+  );
+
+  const notify = (
+    message: SnackbarMessage,
+    variant: "error" | "info" | "default" | "success"
+  ) => {
+    enqueueSnackbar(message, {
+      variant,
+      action: notifyActions,
+    });
+    return;
+  };
+
+  const handleDevicePreview = async (event: any, process: Process) => {
+    event.preventDefault();
+    notify("Opening preview", "info");
+    setIsLoading(true);
+    const res = await axios.post("/api/previewDevice", {
+      deviceId: process.device.id,
+    });
+    if (res.status === 200) {
+      notify("Preview Closed", "info");
+      // toggle
+      setIsLoading(false);
+    }
+  };
 
   const mapColorsToStatus = (status: string) => {
     switch (status) {
@@ -37,13 +85,26 @@ export const Accordion: FC<Props> = ({
     }
   };
 
+  const startBotAgain = (event: any, process: Process) => {
+    event.preventDefault();
+    const data = {
+      username: process.username,
+      password: "",
+      device: process.device,
+    };
+    start_bot(data, (output: string) => {
+      process.status = "RUNNING";
+      updateProcessResult(process, output);
+    });
+  };
+
   const handleChange =
     (tab: string) => (event: SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? tab : false);
     };
 
   return (
-    <Box sx={{ width: 9 / 10 }}>
+    <Box sx={{ width: 9 / 10, margin: "0 auto" }}>
       {processes.map((process, index) => (
         <A
           expanded={
@@ -79,29 +140,62 @@ export const Accordion: FC<Props> = ({
           <AccordionDetails>
             <Typography>Device: {process.device.name}</Typography>
             <Output data={process.result} />
-            <Tooltip title="Stops bot from running." arrow>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={(event) => killBot(event, process)}
-                sx={{ margin: "1rem 1rem 0 0" }}
-              >
-                Stop
-              </Button>
-            </Tooltip>
-            <Tooltip
-              title="Remove bot from view. Only if bot is not running"
-              arrow
-            >
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => removeProcessFromPool(process)}
-                sx={{ margin: "1rem 1rem 0 0" }}
-              >
-                Remove
-              </Button>
-            </Tooltip>
+            <Box sx={{ display: "flex", marginTop: "1rem", columnGap: "2rem" }}>
+              {process.status !== "RUNNING" && process.status !== "WAITING" ? (
+                <>
+                  <Tooltip title="Start bot again." arrow>
+                    <Button
+                      variant="outlined"
+                      color="info"
+                      onClick={(event) => startBotAgain(event, process)}
+                    >
+                      Start bot
+                    </Button>
+                  </Tooltip>
+                  <ChangeBotConfig process={process} />
+                  <Tooltip title="Remove bot from pool." arrow>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => removeProcessFromPool(process)}
+                    >
+                      Remove
+                    </Button>
+                  </Tooltip>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={(event) => killBot(event, process)}
+                  >
+                    Stop
+                  </Button>
+                </>
+              )}
+              <Snackbar
+                description={`Previewing device that is running for ${process.username}`}
+                title={`Preview ${process.device.name}`}
+                icon="info"
+                variant="contained"
+                color="primary"
+                text={
+                  isLoading ? (
+                    <CircularProgress color="inherit" size={25} />
+                  ) : (
+                    "Preview"
+                  )
+                }
+                disabled={isLoading}
+                type="custom"
+                onClick={(event) => handleDevicePreview(event, process)}
+                tooltip="Open Preview"
+                customEventHandler={() => {
+                  return;
+                }}
+              />
+            </Box>
           </AccordionDetails>
         </A>
       ))}

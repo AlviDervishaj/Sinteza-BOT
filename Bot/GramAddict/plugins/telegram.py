@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timedelta
 from textwrap import dedent
@@ -50,8 +51,10 @@ class TelegramReports(Plugin):
             return
 
         def telegram_bot_sendtext(text):
+            telegramPath = os.path.join(os.path.dirname(
+                os.path.dirname(__file__)), 'accounts', username, 'telegram.yml')
             with open(
-                f"accounts/{username}/telegram.yml", "r", encoding="utf-8"
+                telegramPath, "r", encoding="utf-8"
             ) as stream:
                 try:
                     config = yaml.safe_load(stream)
@@ -75,7 +78,9 @@ class TelegramReports(Plugin):
             logger.error(
                 "You have to specify an username for getting reports!")
             return None
-        with open(f"accounts/{username}/sessions.json") as json_data:
+        sessionPath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.dirname(__file__)))), 'accounts', username, 'sessions.json')
+        with open(sessionPath) as json_data:
             activity = json.load(json_data)
 
         aggActivity = []
@@ -154,9 +159,6 @@ class TelegramReports(Plugin):
                 int
             ) - dailySummary["followers"].astype(int).shift(1)
         else:
-            logger.info(
-                "First day of botting eh? Stats for the first day are meh because we don't have enough data to track how many followers you earned today from the bot activity."
-            )
             dailySummary["followers_gained"] = dailySummary["followers"].astype(
                 int)
         dailySummary.dropna(inplace=True)

@@ -184,27 +184,20 @@ export type ConfigRowsSkeleton = {
   "last-session-activity-follows": string;
   "last-session-activity-unfollows": string;
   "last-session-activity-stories-watched": string;
-  "last-session-activity-comments-done": string;
-  "last-session-activity-pm-sent": string;
   "today-session-activity-bottling": string;
   "today-session-activity-likes": string;
   "today-session-activity-follows": string;
   "today-session-activity-unfollows": string;
   "today-session-activity-stories-watched": string;
-  "today-session-activity-comments-done": string;
-  "today-session-activity-pm-sent": string;
   "trends-new-followers-today": string;
   "trends-new-followers-past-3-days": string;
   "trends-new-followers-past-week": string;
-  "trends-milestone": string;
   "weekly-average-bottling": string;
   "weekly-average-followers-per-day": string;
   "weekly-average-likes": string;
   "weekly-average-follows": string;
   "weekly-average-unfollows": string;
   "weekly-average-stories-watched": string;
-  "weekly-average-comments-done": string;
-  "weekly-average-pm-sent": string;
 }
 
 export const SessionConfigSkeleton: SessionConfig = {

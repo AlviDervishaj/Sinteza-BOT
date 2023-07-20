@@ -20,9 +20,10 @@ export const Navigation: FC = () => {
           <Box
             sx={{
               flexGrow: 1,
-              display: { xs: "none", md: "flex" },
+              width: "100%",
+              display: "flex",
               placeItems: "center",
-              justifyContent: "space-between",
+              justifyContent: "space-evenly",
               alignItems: "center",
             }}
           >

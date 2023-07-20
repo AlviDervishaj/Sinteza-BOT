@@ -20,18 +20,22 @@ type Props = {
   addToPool: (process: Process) => void;
   killBot: (process: Process) => void;
   updateProcessResult: (process: Process, output: string) => void;
+  setScheduledProcesses: Dispatch<SetStateAction<Process | null>>;
+  scheduledProcesses: Process | null;
 };
 const AddBot: NextPage<Props> = ({
   setData,
   logData,
   displayError,
+  setScheduledProcesses,
+  addToPool,
+  updateProcessResult,
+  killBot,
   setError,
   getDevices,
   processes,
   devices,
-  addToPool,
-  updateProcessResult,
-  killBot,
+  scheduledProcesses,
 }) => {
   return (
     <>
@@ -76,6 +80,8 @@ const AddBot: NextPage<Props> = ({
         updateProcessResult={updateProcessResult}
         displayError={displayError}
         setError={setError}
+        scheduledProcesses={scheduledProcesses}
+        setScheduledProcesses={setScheduledProcesses}
         processes={processes}
         devices={devices}
         killBot={killBot}

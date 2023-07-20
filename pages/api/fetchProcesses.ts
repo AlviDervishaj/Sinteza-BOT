@@ -7,13 +7,15 @@ import { transferChildProcessOutput } from '../../utils/shell';
 export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     const username: string | null = req.query.username as string;
     if (!username) {
-        return res.end("[ERROR] Can not search for process when username is not provided");
+        res.end("[ERROR] Can not search for process when username is not provided");
+        return;
     }
     else {
         log(`[INFO] Getting bots ...`);
-        const cmd: ChildProcessWithoutNullStreams = spawn(`tasklist | find 'python ${path.join(process.cwd(),
+        const command: string = process.env.SYSTEM === "linux" ? "ps -aux | egrep 'python3" : "WMIC path win32_process get Caption,Processid,Commandlin | find 'python";
+        const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${path.join(process.cwd(),
             'Bot', 'run.py')} --config ${path.join(process.cwd(),
-                'Bot', 'accounts', username, 'config.yml')}'`, { shell: true });
+                'accounts', username, 'config.yml')}'`, { shell: true });
         transferChildProcessOutput(cmd, res);
     }
 }

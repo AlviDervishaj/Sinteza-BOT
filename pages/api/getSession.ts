@@ -8,10 +8,12 @@ import { transferChildProcessOutput } from '../../utils/shell';
 export default async function POST(req: NextApiRequest, res: NextApiResponse) {
     const data = req.body as GetSessionFromPython;
     if (!data.username || data.username.trim() === "") {
-        return res.end("[ERROR] Can not read file when username is not provided");
+        res.end("[ERROR] Can not read file when username is not provided");
+        return;
     }
     const _path: string = path.join(process.cwd(), 'scripts', 'sessions.py');
-    const cmd: ChildProcessWithoutNullStreams = spawn(`python ${_path}`, { shell: true });
+    const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+    const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${_path}`, { shell: true });
     log(`[INFO] Getting session for ${data.username} ...`);
     cmd.stdin.write(JSON.stringify(data));
     cmd.stdin.end();

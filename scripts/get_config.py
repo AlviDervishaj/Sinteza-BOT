@@ -14,7 +14,9 @@ if (username.strip() == "" or not username):
 
 
 iBot_path = os.path.join(os.path.dirname(
-    os.path.dirname(__file__)), 'Bot', 'accounts', username)
+    os.path.dirname(__file__)), 'accounts', username)
+
+print("IBOT PATH : " + iBot_path)
 
 with open(os.path.join(iBot_path, 'config.yml'), 'r', encoding='utf-8') as stream:
     try:

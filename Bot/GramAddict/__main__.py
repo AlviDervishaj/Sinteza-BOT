@@ -62,7 +62,8 @@ def cmd_dump(args):
 
     def make_archive(name):
         os.chdir("dump")
-        shutil.make_archive(base_name=f"screen_{name}", format="zip", root_dir="cur")
+        shutil.make_archive(
+            base_name=f"screen_{name}", format="zip", root_dir="cur")
         shutil.rmtree("cur")
 
     os.makedirs("dump/cur", exist_ok=True)
@@ -75,7 +76,8 @@ def cmd_dump(args):
         + Style.BRIGHT
         + "\nCurrent screen dump generated successfully! Please, send me this file:"
     )
-    print(Fore.BLUE + Style.BRIGHT + f"{os.getcwd()}\\screen_{archive_name}.zip")
+    print(Fore.BLUE + Style.BRIGHT +
+          f"{os.getcwd()}\\screen_{archive_name}.zip")
 
 
 _commands = [
@@ -96,7 +98,8 @@ _commands = [
         command="run",
         help="start the bot!",
         flags=[
-            dict(args=["--config"], nargs="?", help="provide the config.yml path"),
+            dict(args=["--config"], nargs="?",
+                 help="provide the config.yml path"),
         ],
     ),
     dict(

@@ -183,7 +183,7 @@ export const Accordion: FC<Props> = ({
                     color="error"
                     onClick={(event) => killBot(event, process)}
                   >
-                    Stop
+                    {process.scheduled ? "Remove Schedule" : "Stop"}
                   </Button>
                 </>
               )}

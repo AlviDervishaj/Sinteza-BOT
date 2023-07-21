@@ -34,17 +34,10 @@ export const ConfigTable: FC<Props> = ({
   useEffect(() => {
     if (process.status === "RUNNING") {
       const getConfig = async () => {
-        const res = await axios.get(
-          `${URLcondition}api/getConfig?${new URLSearchParams({
-            username: process.username,
-          })}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        const data = res.data as SessionConfig;
+        const res = await axios.get(`${URLcondition}api/getConfig`, {
+          params: { username: process.username },
+        });
+        const data = (await res.data) as SessionConfig;
         if (data) {
           setConfig(data);
           process.config = data;

@@ -6,7 +6,7 @@ import { ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import { transferChildProcessOutput } from '../../utils/shell';
 
 export default async function POST(req: NextApiRequest, res: NextApiResponse) {
-    const data = req.body as GetSessionFromPython;
+    const data: GetSessionFromPython = req.body;
     if (!data.username || data.username.trim() === "") {
         return res.end("[ERROR] Can not read file when username is not provided");
     }

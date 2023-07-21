@@ -26,7 +26,7 @@ const GridToolbar = () => {
   );
 };
 
-export const ProcessesTable: FC<Props> = ({ processes }) => {
+export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [rows, setRows] = useState<ConfigRowsSkeleton[] | []>(
     processes.map((process) => process.session)
@@ -36,152 +36,127 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
     {
       field: "overview-username",
       headerName: "Username",
-      width: 200,
+      width: 100,
     },
     {
       field: "overview-status",
       headerName: "Status",
-      width: 100,
+      width: 92,
+    },
+    {
+      field: "overview-membership",
+      headerName: "Membership",
+      width: 92,
     },
     {
       field: "overview-total-crashes",
-      headerName: "Total Crashes",
-      width: 150,
+      headerName: "Crashes",
+      width: 70,
     },
     {
       field: "overview-followers",
       headerName: "Followers",
-      width: 200,
+      width: 100,
     },
     {
       field: "overview-following",
       headerName: "Following",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-bottling",
-      headerName: "Minutes of Bottling",
-      width: 250,
-    },
-    {
-      field: "last-session-activity-likes",
-      headerName: "Likes",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-follows",
-      headerName: "Follows",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-unfollows",
-      headerName: "Unfollows",
-      width: 200,
-    },
-    {
-      field: "last-session-activity-stories-watched",
-      headerName: "Stories Watched",
-      width: 250,
-    },
-    {
-      field: "last-session-activity-comments-done",
-      headerName: "Comments Done",
-      width: 250,
-    },
-    {
-      field: "last-session-activity-pm-sent",
-      headerName: "PM Sent",
-      width: 200,
-    },
-    {
-      field: "today-session-activity-bottling",
-      headerName: "Minutes of Bottling",
-      width: 250,
-    },
-    {
-      field: "today-session-activity-likes",
-      headerName: "Likes",
-      width: 200,
-    },
-    {
-      field: "today-session-activity-follows",
-      headerName: "Follows",
-      width: 200,
-    },
-    {
-      field: "today-session-activity-unfollows",
-      headerName: "Unfollows",
-      width: 250,
-    },
-    {
-      field: "today-session-activity-stories-watched",
-      headerName: "Stories Watched",
-      width: 250,
-    },
-    {
-      field: "today-session-activity-pm-sent",
-      headerName: "PM Sent",
-      width: 200,
-    },
-    {
-      field: "trends-new-followers-today",
-      headerName: "New Followers Today",
-      width: 260,
-    },
-    {
-      field: "trends-new-followers-past-3-days",
-      headerName: "New Followers past 3 days",
-      width: 270,
-    },
-    {
-      field: "trends-new-followers-past-week",
-      headerName: "New Followers past week",
-      width: 260,
-    },
-    {
-      field: "trends-milestone",
-      headerName: "Milestone",
-      width: 200,
+      width: 100,
     },
     {
       field: "weekly-average-bottling",
-      headerName: "Minutes of Bottling",
-      width: 260,
+      headerName: "Work Time",
+      width: 85,
     },
     {
       field: "weekly-average-followers-per-day",
-      headerName: "Followers per day",
-      width: 220,
+      headerName: "Followers/day",
+      width: 110,
     },
     {
       field: "weekly-average-likes",
       headerName: "Likes",
-      width: 200,
+      width: 50,
     },
     {
       field: "weekly-average-follows",
       headerName: "Follows",
-      width: 200,
+      width: 60,
     },
     {
       field: "weekly-average-unfollows",
       headerName: "Unfollows",
-      width: 200,
+      width: 80,
     },
     {
       field: "weekly-average-stories-watched",
-      headerName: "Stories Watched",
-      width: 200,
+      headerName: "Stories W",
+      width: 80,
     },
     {
-      field: "weekly-average-comments-done",
-      headerName: "Comments Done",
-      width: 200,
+      field: "trends-new-followers-today",
+      headerName: "Gains Today",
+      width: 90,
     },
     {
-      field: "weekly-average-pm-sent",
-      headerName: "PM Sent",
-      width: 200,
+      field: "trends-new-followers-past-3-days",
+      headerName: "Gains past 3 days",
+      width: 125,
+    },
+    {
+      field: "trends-new-followers-past-week",
+      headerName: "Gains past week",
+      width: 120,
+    },
+    {
+      field: "last-session-activity-bottling",
+      headerName: "Work Time",
+      width: 85,
+    },
+    {
+      field: "last-session-activity-likes",
+      headerName: "Likes",
+      width: 50,
+    },
+    {
+      field: "last-session-activity-follows",
+      headerName: "Follows",
+      width: 60,
+    },
+    {
+      field: "last-session-activity-unfollows",
+      headerName: "Unfollows",
+      width: 80,
+    },
+    {
+      field: "last-session-activity-stories-watched",
+      headerName: "Stories W",
+      width: 80,
+    },
+    {
+      field: "today-session-activity-bottling",
+      headerName: "Work Time",
+      width: 85,
+    },
+    {
+      field: "today-session-activity-likes",
+      headerName: "Likes",
+      width: 50,
+    },
+    {
+      field: "today-session-activity-follows",
+      headerName: "Follows",
+      width: 60,
+    },
+    {
+      field: "today-session-activity-unfollows",
+      headerName: "Unfollows",
+      width: 80,
+    },
+    {
+      field: "today-session-activity-stories-watched",
+      headerName: "Stories W",
+      width: 80,
     },
   ];
 
@@ -217,6 +192,7 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
         id: uuidv5(process.username, uuidv5.URL),
         "overview-username": process.username,
         "overview-total-crashes": process.total_crashes,
+        "overview-membership": process.membership,
         "overview-status": process.status,
         "overview-followers": session["overview-followers"],
         "overview-following": session["overview-following"],
@@ -232,6 +208,7 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
       children: [
         { field: "overview-username" },
         { field: "overview-status" },
+        { field: "overview-membership" },
         { field: "overview-total-crashes" },
         { field: "overview-followers" },
         { field: "overview-following" },
@@ -246,8 +223,6 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
         { field: "last-session-activity-follows" },
         { field: "last-session-activity-unfollows" },
         { field: "last-session-activity-stories-watched" },
-        { field: "last-session-activity-comments-done" },
-        { field: "last-session-activity-pm-sent" },
       ],
     },
     {
@@ -259,8 +234,6 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
         { field: "today-session-activity-follows" },
         { field: "today-session-activity-unfollows" },
         { field: "today-session-activity-stories-watched" },
-        { field: "today-session-activity-comments-done" },
-        { field: "today-session-activity-pm-sent" },
       ],
     },
     {
@@ -283,8 +256,6 @@ export const ProcessesTable: FC<Props> = ({ processes }) => {
         { field: "weekly-average-follows" },
         { field: "weekly-average-unfollows" },
         { field: "weekly-average-stories-watched" },
-        { field: "weekly-average-comments-done" },
-        { field: "weekly-average-pm-sent" },
       ],
     },
   ];

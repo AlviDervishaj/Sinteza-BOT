@@ -2,7 +2,6 @@ import json
 import os
 import sys
 from datetime import datetime, timedelta
-from textwrap import dedent
 
 
 def logger(x): return print(x, flush=True)
@@ -13,12 +12,7 @@ data = json.loads(sys.stdin.read())
 if not data['username']:
     logger("Please enter a valid username.")
     exit()
-if not data['following_now']:
-    data['following_now'] = 0
-    exit()
-if not data['following_now']:
-    data['following_now'] = 0
-    exit()
+
 
 
 if type(data['following_now']) == str:
@@ -37,15 +31,8 @@ except ImportError:
 sessionPath = os.path.join(os.path.dirname(
     os.path.dirname(__file__)), 'accounts', data['username'])
 
-
-class GenerateReports():
-
-    def run(self, username, followers_now, following_now):
-        self.followers_now = followers_now
-        self.following_now = following_now
-        self.time_left = None
-        self.username = username
-
+def run( username, followers_now, following_now):
+        time_left = None
         def telegram_bot_sendtext(text):
             return logger(text)
 
@@ -102,13 +89,13 @@ class GenerateReports():
             ],
         )
         df["date"] = df.loc[:, "start"].str[:10]
-        df["duration"] = pd.to_datetime(df["finish"], errors="coerce") - pd.to_datetime(
-            df["start"], errors="coerce"
+        df["duration"] = pd.to_datetime(df["finish"], errors="coerce", format="mixed") - pd.to_datetime(
+            df["start"], errors="coerce", format="mixed"
         )
         df["duration"] = df["duration"].dt.total_seconds() / 60
 
-        if self.time_left is not None:
-            timeString = f'Next session will start at: {(datetime.now()+ timedelta(seconds=self.time_left)).strftime("%H:%M:%S (%Y/%m/%d)")}.'
+        if time_left is not None:
+            timeString = f'Next session will start at: {(datetime.now()+ timedelta(seconds=time_left)).strftime("%H:%M:%S (%Y/%m/%d)")}.'
         else:
             timeString = "There is no new session planned!"
 
@@ -139,17 +126,6 @@ class GenerateReports():
         dailySummary["followers_gained"] = dailySummary["followers_gained"].astype(
             int)
         dailySummary["duration"] = dailySummary["duration"].astype(int)
-        numFollowers = int(dailySummary["followers"].iloc[-1])
-        n = 1
-        milestone = ""
-        try:
-            for x in range(10):
-                if numFollowers in range(x * 1000, n * 1000):
-                    milestone = f"{str(int(((n * 1000 - numFollowers)/dailySummary['followers_gained'].tail(7).mean())))} days until {n}k"
-                    break
-                n += 1
-        except OverflowError:
-            logger("Not able to get milestone ETA..")
 
         # def undentString(string):
         #     return dedent(string[1:])[:-1]
@@ -157,41 +133,32 @@ class GenerateReports():
         followers_before = int(df["followers"].iloc[-1])
         following_before = int(df["following"].iloc[-1])
         statString = {
-            "overview-followers": f"{self.followers_now} ({self.followers_now - followers_before:+})",
-            "overview-following": f"{self.following_now} ({self.following_now - following_before:+})",
+            "overview-followers": f"{followers_now} ({followers_now - followers_before:+})",
+            "overview-following": f"{following_now} ({following_now - following_before:+})",
             "last-session-activity-bottling": f"{str(df['duration'].iloc[-1].astype(int))}",
             "last-session-activity-likes": f"{str(df['likes'].iloc[-1])}",
             "last-session-activity-follows": f"{str(df['followed'].iloc[-1])}",
             "last-session-activity-unfollows": f"{str(df['unfollowed'].iloc[-1])} ",
             "last-session-activity-stories-watched": f"{str(df['watched'].iloc[-1])}",
-            "last-session-activity-comments-done": f"{str(df['comments'].iloc[-1])}",
-            "last-session-activity-pm-sent": f"{str(df['pm_sent'].iloc[-1])}",
             "today-session-activity-bottling": f"{str(dailySummary['duration'].iloc[-1])}",
             "today-session-activity-likes": f"{str(dailySummary['likes'].iloc[-1])}",
             "today-session-activity-follows": f"{str(dailySummary['followed'].iloc[-1])}",
             "today-session-activity-unfollows": f"{str(dailySummary['unfollowed'].iloc[-1])}",
             "today-session-activity-stories-watched": f"{str(dailySummary['watched'].iloc[-1])}",
-            "today-session-activity-comments-done": f"{str(dailySummary['comments'].iloc[-1])}",
-            "today-session-activity-pm-sent": f"{str(dailySummary['pm_sent'].iloc[-1])}",
             "trends-new-followers-today": f"{str(dailySummary['followers_gained'].iloc[-1])}",
             "trends-new-followers-past-3-days": f"{str(dailySummary['followers_gained'].tail(3).sum())}",
             "trends-new-followers-past-week": f"{str(dailySummary['followers_gained'].tail(7).sum())}",
-            "trends-milestone": f"{milestone if not '' else ''}",
             "weekly-average-followers-per-day": f"{str(round(dailySummary['followers_gained'].tail(7).mean(), 1))}",
             "weekly-average-likes": f"{str(int(dailySummary['likes'].tail(7).mean()))}",
             "weekly-average-follows": f"{str(int(dailySummary['followed'].tail(7).mean()))}",
             "weekly-average-unfollows": f"{str(int(dailySummary['unfollowed'].tail(7).mean()))}",
             "weekly-average-stories-watched": f"{str(int(dailySummary['watched'].tail(7).mean()))}",
-            "weekly-average-comments-done": f"{str(int(dailySummary['comments'].tail(7).mean()))}",
-            "weekly-average-pm-sent": f"{str(int(dailySummary['pm_sent'].tail(7).mean()))} ",
             "weekly-average-bottling": f"{str(int(dailySummary['duration'].tail(7).mean()))}"
         }
         try:
-            r = telegram_bot_sendtext(json.dumps(statString))
+            telegram_bot_sendtext(json.dumps(statString))
         except Exception as e:
             logger(f"Failed to flush data from telegram config : {e}")
 
 
-generatedReports = GenerateReports()
-generatedReports.run(username=data["username"],
-                     followers_now=data["followers_now"], following_now=data["following_now"])
+run(username=data["username"], followers_now=data["followers_now"], following_now=data["following_now"])

@@ -133,7 +133,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       });
     }
   };
-
   //  Snackbar
   const handleSnackbarClose = (
     event: SyntheticEvent | Event,
@@ -200,10 +199,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             process.status !== "RUNNING"
           ) {
             process = _process;
-            process.status = _process.status;
-            process.session = _process.session;
-            process.followers = _process.followers;
-            process.following = _process.following;
           }
           return process;
         });
@@ -234,20 +229,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           } else if (output.includes("INFO | Current active-job:")) {
             // TODO: display current active job
           } else if (output.includes("INFO | Next session will start at:")) {
+            getSession(process);
             process.status = "WAITING";
-            const _data: GetSessionFromPython = {
-              username: process.username,
-              followers_now: process.followers,
-              following_now: process.following,
-            };
-            axios
-              .post(`${URLcondition}api/getSession`, _data)
-              .then((result) => {
-                const data = result.data as ConfigRowsSkeleton;
-                process.session = data;
-                addToPool(process);
-              });
-          } else if (output.includes("WARNING | App has crashed")) {
+            getSession(process);
+          } else if (output.includes("WARNING | App has crashed") || output.includes("adbutils.errors.AdbError")) {
             process.status = "STOPPED";
             console.log({output});
             process.total_crashes += 1;
@@ -261,18 +246,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               });
           } else if (output.includes("INFO | -------- FINISH:")) {
             process.status = "FINISHED";
-            const _data: GetSessionFromPython = {
-              username: process.username,
-              followers_now: process.followers,
-              following_now: process.following,
-            };
-            axios
-              .post(`${URLcondition}api/getSession`, _data)
-              .then((result) => {
-                const data = result.data as ConfigRowsSkeleton;
-                process.session = data;
-                addToPool(process);
-              });
+            getSession(process);
           }
         }
         return process;
@@ -283,51 +257,25 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   // get session data for a process
   const getSession = async (process: Process) => {
     if (!process.username || process.username.trim() === "") return;
-    const _data: GetSessionFromPython = {
+    const _data = {
       username: process.username,
       followers_now: process.followers,
       following_now: process.following,
-    };
-    const result = await axios.post(`${URLcondition}api/getSession`, _data);
-    const data = result.data as ConfigRowsSkeleton;
+    }
+    const result = await fetch(`${URLcondition}api/getSession`,{
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(_data)
+    });
+    const data = await result.json() as ConfigRowsSkeleton;
     process.session = data;
     addToPool(process);
   };
 
-  // // get adb devices
-  // const getDevices = async () => {
-  //   const getBusNumbers = await axios.get(`${URLcondition}api/getBusNumbers`);
-  //   const busNumbers: string[] = (await getBusNumbers.data)
-  //     .split("\n")
-  //     .filter((d: string) => d.trim() !== "")
-  //     .map((d: string) => {
-  //       const bus_numbers = d.replace(":", "").split(" ");
-  //       return bus_numbers.join(":");
-  //     });
-  //   let devicesArray: { id: string; name: string }[] = [];
-  //   busNumbers.forEach(async (busNumber) => {
-  //     const r = await axios.get(`${URLcondition}api/getDevices?`, {
-  //       params: {
-  //         bus_number: busNumber,
-  //       },
-  //     });
-  //     const _d: string = await r.data;
-  //     const _temp_d: string[] = _d.split(" ").filter((d) => d.trim() !== "");
-  //     const _temp: { id: string; name: string } = {
-  //       id: _temp_d[_temp_d.length - 1].replace("\n", ""),
-  //       name: `${_temp_d[2]} ${_temp_d[3]} ${_temp_d[8]} ${_temp_d[9]}`,
-  //     };
-  //     devicesArray.push(_temp);
-  //   });
-  //   logData(
-  //     `[INFO] ${devicesArray.length} device${
-  //       devicesArray.length > 1 ? "s" : ""
-  //     } connected.`
-  //   );
-  //   setDevices(devicesArray);
-  // };
 
-  // Display Data
+
 
   // get adb devices
   const getDevices = async () => {
@@ -389,6 +337,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     };
   }, [processes]);
 
+
   // get processes from local storage
   useEffect(() => {
     const p: ProcessSkeleton[] | [] = localStorage.getItem("processes")
@@ -422,6 +371,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       setIsLoading(false);
     }, 1000);
   }, []);
+
   if (isLoading)
     return (
       <main

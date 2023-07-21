@@ -5,7 +5,7 @@ import { transferChildProcessOutput } from '../../utils/shell';
 import { log } from 'console';
 import { BotFormData } from '../../utils/Types';
 
-export default function GET(req: NextApiRequest, res: NextApiResponse) {
+export default function POST(req: NextApiRequest, res: NextApiResponse) {
   const botFormData: BotFormData = req.body;
   // check if data is valid
   if (!botFormData) {

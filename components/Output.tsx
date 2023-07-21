@@ -36,7 +36,7 @@ export const Output: FC<Props> = ({ data }) => {
             margin: "0.5rem 1rem",
             padding: "1rem",
             lineHeight: "2rem",
-            color: !data.includes("Error") ? "#2b2d42" : "#d90429",
+            color: "#2b2d42",
           }}
         >
           {data && data}

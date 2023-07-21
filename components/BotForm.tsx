@@ -137,7 +137,8 @@ export const BotForm: FC<Props> = ({
       0,
       ConfigRows,
       SessionConfigSkeleton,
-      SessionProfileSkeleton
+      SessionProfileSkeleton,
+      0
     );
     start_bot(formData, (output: string) => {
       updateProcessResult(p, output);

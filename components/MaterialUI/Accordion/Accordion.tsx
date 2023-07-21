@@ -22,6 +22,7 @@ import { Output } from "../../Output";
 import { ChangeBotConfig } from "../Dialog/Dialog";
 import { Snackbar } from "../Snackbar";
 import { start_bot } from "../../../utils/api-client";
+import { BotFormData } from "../../../utils";
 type Props = {
   removeProcessFromPool: (process: Process) => void;
   processes: Process[];
@@ -38,6 +39,16 @@ export const Accordion: FC<Props> = ({
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
+
+  const sortedProcesses = processes.sort((a, b) => {
+    if (a.username < b.username) {
+      return -1;
+    }
+    if (a.username > b.username) {
+      return 1;
+    }
+    return 0;
+  });
 
   const notifyActions = (id: SnackbarKey) => (
     <>
@@ -87,6 +98,8 @@ export const Accordion: FC<Props> = ({
 
   const startBotAgain = (event: any, process: Process) => {
     event.preventDefault();
+    process.scheduled = false;
+    process.total_crashes = 0;
     const data = {
       username: process.username,
       password: "",
@@ -105,7 +118,7 @@ export const Accordion: FC<Props> = ({
 
   return (
     <Box sx={{ width: 9 / 10, margin: "0 auto" }}>
-      {processes.map((process, index) => (
+      {sortedProcesses.map((process, index) => (
         <A
           expanded={
             expanded ===

@@ -5,6 +5,8 @@ import { ConfigRows, ConfigRowsSkeleton, Session, SessionConfig, SessionConfigSk
 let id = 0;
 export type ProcessSkeleton = {
   _device: { id: string, name: string },
+  _scheduled: string | false
+  _battery: string,
   _result: string,
   _config: SessionConfig,
   _total_crashes: number,
@@ -22,6 +24,8 @@ export type ProcessSkeleton = {
 }
 export class Process {
   private _device: { id: string, name: string };
+  private _scheduled: false | string;
+  private _battery: string;
   private _result: string;
   private _total: Session[];
   private _followers: number;
@@ -48,7 +52,9 @@ export class Process {
     session: ConfigRowsSkeleton,
     config: SessionConfig = SessionConfigSkeleton,
     profile: SessionProfile = SessionProfileSkeleton,
-    _total_crashes: number = 0
+    _total_crashes: number = 0,
+    _scheduled: false | string = false,
+    _battery: string
   ) {
     this._user = {
       username,
@@ -64,6 +70,8 @@ export class Process {
     this._total_crashes = _total_crashes ? _total_crashes : 0;
     this._profile = profile;
     this._session = session ? session : ConfigRows;
+    this._scheduled = _scheduled;
+    this._battery = _battery;
     id++;
   }
 
@@ -72,6 +80,15 @@ export class Process {
   }
   set device(device: { id: string, name: string }) {
     this._device = device;
+    return;
+  }
+
+  get battery() {
+    return this._battery;
+  }
+
+  set battery(battery: string) {
+    this._battery = battery;
     return;
   }
 
@@ -108,6 +125,13 @@ export class Process {
   set session(session: ConfigRowsSkeleton) {
     this._session = session;
     return;
+  }
+
+  get scheduled() {
+    return this._scheduled;
+  }
+  set scheduled(scheduled: false | string) {
+    this._scheduled = scheduled;
   }
 
   get following() {
@@ -173,102 +197,4 @@ export class Process {
     this._result = result;
     return;
   }
-}
-
-export class ProcessesPool {
-  private _processes: Process[];
-
-  constructor(processes: Process[] = []) {
-    this._processes = processes;
-  }
-
-  get processes(): Process[] {
-    return this._processes;
-  }
-
-  // remove first inserted
-  removeFirstInsertedProcess(): void {
-    this._processes.shift();
-    return;
-  }
-
-  // remove a process based on device
-  removeProcessByDevice(device: { id: string, name: string }): Process[] {
-    const index = this._processes.findIndex(process => process.device.id === device.id);
-    if (index > -1) {
-      this._processes.splice(index, 1);
-    }
-    return this._processes;;
-  }
-  // remove process
-  removeProcess(process: Process): Process[] {
-    const index = this._processes.indexOf(process);
-    if (index > -1) {
-      this._processes.splice(index, 1);
-    }
-    return this._processes;
-  }
-
-  // remove a process by useranme and device
-  removeProcessByUsernameAndDevice(username: string, device: { id: string, name: string }): Process[] {
-    const index = this._processes.findIndex(process => process.device.id === device.id && process.username === username);
-    if (index > -1) {
-      this._processes.splice(index, 1);
-    }
-    return this._processes;
-  }
-
-  // remove last inserted
-  removeLastInsertedProcess(): void {
-    this._processes.pop();
-    return;
-  }
-
-  // add to pool
-  addToPool(process: Process): string | void {
-    // check if process is already in pool
-    const isProcessInPool = this._processes.find(_process => _process.device === process.device && _process.username === process.username);
-    if (isProcessInPool) return "Process already in pool";
-
-    this._processes.push(process);
-    return;
-  }
-
-  // add to beginning of pool
-  addToBeginningOfPool(process: Process): void {
-    this._processes.unshift(process);
-    return;
-  }
-
-  // find process by device
-  findOneProcessByDevice(device: { id: string, name: string }): Process | undefined {
-    return this._processes.find(process => process.device.id === device.id);
-  }
-
-  // find multiple processes by device
-  findMultipleProcessesByDevice(device: { id: string, name: string }): Process[] {
-    return this._processes.filter(process => process.device.id === device.id);
-  }
-
-  // find process by username
-  findOneProcessByUsername(username: string): Process | undefined {
-    return this._processes.find(process => process.username === username);
-  }
-
-  // find multiple processes by username
-  findMultipleProcessesByUsername(username: string): Process[] {
-    return this._processes.filter(process => process.username === username);
-  }
-
-  // find multiple processes by status
-  findMultipleProcessesByStatus(status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED"): Process[] {
-    return this._processes.filter(process => process.status === status);
-  }
-
-  // remove all
-  removeAllProcesses(): void {
-    this._processes = [];
-    return;
-  }
-
 }

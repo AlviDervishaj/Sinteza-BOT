@@ -5,7 +5,7 @@ import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
 // React & Next Js
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, Fragment } from "react";
 import type { AppProps } from "next/app";
 import { NextRouter, useRouter } from "next/router";
 
@@ -29,6 +29,7 @@ import {
   useSnackbar,
   SnackbarKey,
   SnackbarMessage,
+  enqueueSnackbar as enqs,
 } from "notistack";
 
 // Axios
@@ -54,7 +55,18 @@ import {
   GetSessionFromPython,
   DevicesList,
   URLcondition,
+  start_bot,
+  BotFormData,
 } from "../utils";
+// Dayjs
+import dayjs from "dayjs";
+import RelativeTime from "dayjs/plugin/relativeTime";
+import Duration from "dayjs/plugin/duration";
+import Calendar from "dayjs/plugin/calendar";
+
+dayjs.extend(RelativeTime);
+dayjs.extend(Duration);
+dayjs.extend(Calendar);
 
 export default function Sinteza({ Component, pageProps }: AppProps) {
   const router: NextRouter = useRouter();
@@ -63,9 +75,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const [data, setData] = useState<string>("");
   const [devices, setDevices] = useState<{ id: string; name: string }[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
-  const [scheduledProcesses, setScheduledProcesses] = useState<Process | null>(
-    null
-  );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const lightTheme = createTheme({ palette: { mode: "light" } });
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
@@ -86,6 +95,85 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     return;
   };
   const killBot = useCallback(async (event: any, proc: Process) => {
+    if (proc.scheduled !== false) {
+      const startTime = dayjs(proc.scheduled).valueOf();
+      const timeLeft = startTime - dayjs().valueOf();
+      console.log(timeLeft);
+      enqs(`Scheduled Bot to terminate ${proc.scheduled}`, {
+        variant: "info",
+        action: notifyActions,
+        autoHideDuration: 2000,
+      });
+      // execute callback after bot started.
+      setTimeout(async () => {
+        event.preventDefault();
+        // call terminateProcess
+        const result = await fetch(
+          `${URLcondition}api/fetchProcesses?${new URLSearchParams({
+            username: proc.username,
+          })}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "text/plain",
+            },
+          }
+        );
+        const data = await result.text();
+        const _processes = data.split("\n").map((p) =>
+          p
+            .split("   ")
+            .filter((s) => s.length)
+            .join(" ")
+        );
+        // remove all elements except the last one.
+        const command = _processes[0];
+        // get pid of command
+        const pid = command
+          .split(" ")
+          .filter((elem) => elem.trim() !== "")[1]
+          .trim();
+        await fetch(
+          `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "text/plain",
+            },
+          }
+        );
+        enqs(`${proc.username} stopped.`, {
+          variant: "success",
+          action: notifyActions,
+          autoHideDuration: 2000,
+        });
+        const _data: GetSessionFromPython = {
+          username: proc.username,
+          followers_now: proc.followers,
+          following_now: proc.following,
+        };
+        enqs("Getting session data ...", {
+          variant: "info",
+          action: notifyActions,
+          autoHideDuration: 2000,
+        });
+        const r = await axios.post(`${URLcondition}api/getSession`, _data);
+        const d = r.data as ConfigRowsSkeleton;
+        proc.session = d;
+        proc.status = "STOPPED";
+        proc.result += "\n[INFO] Bot stopped by user.\n";
+        axios
+          .post(`${URLcondition}api/sendStatusToTelegram`, {
+            username: proc.username,
+          })
+          .then((res) => {
+            proc.result += res.data;
+          });
+        // add it to previous processes
+        addToPool(proc);
+      }, timeLeft + 2000);
+      return;
+    }
     event.preventDefault();
     // call terminateProcess
     const result = await fetch(
@@ -122,13 +210,21 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         },
       }
     );
-    notify("Bot stopped", "success");
+    enqs(`${proc.username} stopped.`, {
+      variant: "success",
+      action: notifyActions,
+      autoHideDuration: 2000,
+    });
     const _data: GetSessionFromPython = {
       username: proc.username,
       followers_now: proc.followers,
       following_now: proc.following,
     };
-    notify("Getting session data ...", "info");
+    enqs(`Getting ${proc.username}'s data ...`, {
+      variant: "info",
+      action: notifyActions,
+      autoHideDuration: 2000,
+    });
     const r = await axios.post(`${URLcondition}api/getSession`, _data);
     const d = r.data as ConfigRowsSkeleton;
     proc.session = d;
@@ -141,6 +237,11 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       .then((res) => {
         proc.result += res.data;
       });
+    enqs(`${proc.username} sent to telegram.`, {
+      variant: "info",
+      action: notifyActions,
+      autoHideDuration: 2000,
+    });
     // add it to previous processes
     addToPool(proc);
   }, []);
@@ -279,6 +380,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               )
             ) {
               process.status = "FINISHED";
+              readConfig(process);
               getSession(process);
             }
           }
@@ -369,6 +471,21 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     getDevices();
   });
 
+  function getDevicesBattery() {
+    console.log("here ?");
+    const temp = [...processes];
+    temp.map(async (process) => {
+      const result = await axios.post(`${URLcondition}api/deviceBattery`, {
+        deviceId: process.device.id,
+      });
+      const data: string = result.data;
+      const fData: string = `${data.trim().split(":")[1]}%`.trim();
+      console.log({ fData });
+      process.battery = fData;
+      addToPool(process);
+    });
+  }
+
   // store in localstorage
   function storeInLS() {
     localStorage.setItem(
@@ -403,7 +520,9 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               _p._session,
               _p._config,
               _p._profile,
-              _p._total_crashes
+              _p._total_crashes,
+              _p._scheduled,
+              _p._battery
             );
           })
         : [];
@@ -423,6 +542,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   useInterval(storeInLS, 1000 * 10);
   // get processes from local storage every 10 second
   useInterval(getFromLS, 1000 * 10);
+
+  // get device's battery every 5 minutes
+  useInterval(getDevicesBattery, 1000 * 60 * 5);
+
   if (isLoading)
     return (
       <Backdrop
@@ -436,64 +559,64 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline enableColorScheme />
-      <SnackbarProvider maxSnack={3} autoHideDuration={2500}>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <Navigation />
-          <Box>
-            <Component
-              {...pageProps}
-              setData={setData}
-              logData={logData}
-              displayError={displayError}
-              setError={setError}
-              setDevices={setDevices}
-              getDevices={getDevices}
-              devices={devices}
-              killBot={killBot}
-              addToPool={addToPool}
-              updateProcessResult={updateProcessResult}
-              processes={processes}
-              scheduledProcesses={scheduledProcesses}
-              setScheduledProcesses={setScheduledProcesses}
-            />
-          </Box>
-          {router.pathname === "/" ? (
-            <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
-              <Box sx={{ margin: "0 auto", overflow: "auto" }}>
-                <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
-                  Processes
-                </Typography>
-                <ProcessesTable
-                  processes={processes}
-                  getSession={getSession}
-                  stopProcessByUsername={stopProcessByUsername}
-                />
-              </Box>
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "fit-content",
-                  backgroundColor: "#e5e5e5",
-                  padding: "2rem",
-                }}
-              >
-                <ShowProcesses
-                  text="Details"
-                  updateProcessResult={updateProcessResult}
-                  killBot={killBot}
-                  noProcessesText="No Processes currently running..."
-                  processes={processes}
-                  removeProcessFromPool={removeProcessFromPool}
-                />
-              </Box>
+      <Fragment>
+        <SnackbarProvider maxSnack={3} autoHideDuration={2500}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Navigation />
+            <Box>
+              <Component
+                {...pageProps}
+                setData={setData}
+                logData={logData}
+                displayError={displayError}
+                setError={setError}
+                setDevices={setDevices}
+                getDevices={getDevices}
+                devices={devices}
+                killBot={killBot}
+                addToPool={addToPool}
+                updateProcessResult={updateProcessResult}
+                processes={processes}
+              />
             </Box>
-          ) : (
-            <div ref={scrollToMe}>
-              {router.pathname !== "/" ? <Output data={data} /> : null}
-            </div>
-          )}
-        </LocalizationProvider>
-      </SnackbarProvider>
+            {router.pathname === "/" ? (
+              <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
+                <Box sx={{ margin: "0 auto", overflow: "auto" }}>
+                  <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
+                    Processes
+                  </Typography>
+                  <ProcessesTable
+                    processes={processes}
+                    getSession={getSession}
+                    stopProcessByUsername={stopProcessByUsername}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "fit-content",
+                    backgroundColor: "#e5e5e5",
+                    padding: "2rem",
+                  }}
+                >
+                  <ShowProcesses
+                    text="Details"
+                    updateProcessResult={updateProcessResult}
+                    killBot={killBot}
+                    noProcessesText="No Processes currently running..."
+                    processes={processes}
+                    removeProcessFromPool={removeProcessFromPool}
+                  />
+                </Box>
+              </Box>
+            ) : (
+              <div ref={scrollToMe}>
+                {router.pathname !== "/" ? <Output data={data} /> : null}
+              </div>
+            )}
+          </LocalizationProvider>
+        </SnackbarProvider>
+      </Fragment>
     </ThemeProvider>
   );
 }

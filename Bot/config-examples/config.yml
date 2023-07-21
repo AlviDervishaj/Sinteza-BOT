@@ -8,16 +8,16 @@
 # General Configuration
 ##############################################################################
 
-username: a.lvii # you have to put your IG name here!
-password: asd
-device: R7AT30TZY2R
+username: test # you have to put your IG name here!
+password: test
+device: test
 app-id: com.instagram.android
 
 cloned-app-mode: 1
 rotate-ip: false
 screen-sleep: true
 screen-record: false
-speed-multiplier: "20"
+speed-multiplier: 1
 debug: false
 close-apps: false
 disable-block-detection: false
@@ -30,7 +30,7 @@ change-source-if-crash: true
 relog-after-block: true
 relog-delay: 30
 shuffle-jobs: true
-truncate-sources: "2"
+truncate-sources: 2-5
 
 ##############################################################################
 # Actions

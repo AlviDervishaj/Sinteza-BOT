@@ -21,10 +21,16 @@ import {
   Switch,
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
+import { Close } from "@mui/icons-material";
+
+// DayJs
 import dayjs, { Dayjs } from "dayjs";
 import RelativeTime from "dayjs/plugin/relativeTime";
-import { Close } from "@mui/icons-material";
-import { useEffectOnce, useTimeout } from "usehooks-ts";
+import Duration from "dayjs/plugin/duration";
+import Calendar from "dayjs/plugin/calendar";
+
+// Hooks
+import { useEffectOnce } from "usehooks-ts";
 
 // Utils
 import { Process } from "../utils/Process";
@@ -35,6 +41,7 @@ import {
   SessionProfileSkeleton,
 } from "../utils/Types";
 import { start_bot, start_bot_checks } from "../utils/api-client";
+import axios from "axios";
 
 type Props = {
   setError: (error: string) => void;
@@ -47,19 +54,17 @@ type Props = {
   addToPool: (process: Process) => void;
   killBot: (event: any, process: Process) => void;
   updateProcessResult: (process: Process, result: string) => void;
-  setScheduledProcesses: Dispatch<SetStateAction<Process | null>>;
-  scheduledProcesses: Process | null;
 };
 
 dayjs.extend(RelativeTime);
+dayjs.extend(Duration);
+dayjs.extend(Calendar);
 
 export const BotForm: FC<Props> = ({
   setError,
   getDevices,
   logData,
   devices,
-  setScheduledProcesses,
-  scheduledProcesses,
   processes,
   addToPool,
   updateProcessResult,
@@ -162,6 +167,13 @@ export const BotForm: FC<Props> = ({
     // logData(data);
   };
 
+  const getBatteryPercentage = async (device: string) => {
+    const result = await axios.post("/api/deviceBattery", { deviceId: device });
+    const data = result.data;
+    const fBattery: string = data.trim().split(":")[1];
+    return fBattery.trim();
+  };
+
   const handleScheduledChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -214,6 +226,25 @@ export const BotForm: FC<Props> = ({
         `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
         "info"
       );
+      const battery = await getBatteryPercentage(formData.device.id);
+      // call api to get device battery
+      const p = new Process(
+        formData.device,
+        formData.username,
+        membership,
+        "WAITING",
+        "[INFO] Waiting for scheduled time...\n",
+        [],
+        0,
+        0,
+        ConfigRows,
+        SessionConfigSkeleton,
+        SessionProfileSkeleton,
+        0,
+        _isScheduled.toString(),
+        `${battery}%`
+      );
+      addToPool(p);
       setTimeout(() => {
         logData("[INFO] Starting bot...");
         if (
@@ -226,19 +257,6 @@ export const BotForm: FC<Props> = ({
           notify("Bot is already running !", "error");
           return;
         }
-        const p = new Process(
-          formData.device,
-          formData.username,
-          membership,
-          "RUNNING",
-          "",
-          [],
-          0,
-          0,
-          ConfigRows,
-          SessionConfigSkeleton,
-          SessionProfileSkeleton
-        );
         start_bot(formData, (output: string) => {
           updateProcessResult(p, output);
         });
@@ -259,6 +277,7 @@ export const BotForm: FC<Props> = ({
         notify("Bot is already running !", "error");
         return;
       }
+      const battery = await getBatteryPercentage(formData.device.id);
       const p = new Process(
         formData.device,
         formData.username,
@@ -270,7 +289,10 @@ export const BotForm: FC<Props> = ({
         0,
         ConfigRows,
         SessionConfigSkeleton,
-        SessionProfileSkeleton
+        SessionProfileSkeleton,
+        0,
+        false,
+        `${battery}%`
       );
       start_bot(formData, (output: string) => {
         updateProcessResult(p, output);
@@ -283,7 +305,7 @@ export const BotForm: FC<Props> = ({
   return (
     <>
       <Container maxWidth="sm">
-        <Typography variant="h3" textAlign={"center"} marginBottom={"3rem"}>
+        <Typography variant="h3" textAlign={"center"} margin={"2rem 0 3rem"}>
           Add a Bot
         </Typography>
         <Grid container spacing={2} gap={4}>

@@ -5,6 +5,7 @@ import { SetStateAction, Dispatch } from "react";
 import { BotForm } from "../components/BotForm";
 import { NextPage } from "next";
 import { Process } from "../utils/Process";
+import { BotFormData } from "../utils";
 
 type Props = {
   setError: (error: string) => void;
@@ -20,14 +21,18 @@ type Props = {
   addToPool: (process: Process) => void;
   killBot: (process: Process) => void;
   updateProcessResult: (process: Process, output: string) => void;
-  setScheduledProcesses: Dispatch<SetStateAction<Process | null>>;
-  scheduledProcesses: Process | null;
+  timeout: (
+    p: Process,
+    formData: BotFormData,
+    duration: number,
+    setAlreadyCalled: (value: boolean) => void
+  ) => NodeJS.Timeout;
 };
 const AddBot: NextPage<Props> = ({
   setData,
   logData,
   displayError,
-  setScheduledProcesses,
+  timeout,
   addToPool,
   updateProcessResult,
   killBot,
@@ -35,7 +40,6 @@ const AddBot: NextPage<Props> = ({
   getDevices,
   processes,
   devices,
-  scheduledProcesses,
 }) => {
   return (
     <>
@@ -61,7 +65,7 @@ const AddBot: NextPage<Props> = ({
 
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={`${process.env.BASE_URL}`} />
-        <meta property="twitter:creator" content="@alvi_d1" />
+        <meta property="twitter:creator" content="" />
         <meta property="twitter:title" content="Sinteza " />
         <meta
           property="twitter:description"
@@ -80,8 +84,6 @@ const AddBot: NextPage<Props> = ({
         updateProcessResult={updateProcessResult}
         displayError={displayError}
         setError={setError}
-        scheduledProcesses={scheduledProcesses}
-        setScheduledProcesses={setScheduledProcesses}
         processes={processes}
         devices={devices}
         killBot={killBot}

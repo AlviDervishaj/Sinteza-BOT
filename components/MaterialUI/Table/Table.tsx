@@ -12,7 +12,19 @@ import {
 } from "@mui/x-data-grid";
 import { Process } from "../../../utils/Process";
 import { Box } from "@mui/material";
+
+// Hooks
 import { useEffectOnce } from "usehooks-ts";
+
+// DayJs
+import dayjs from "dayjs";
+import RelativeTime from "dayjs/plugin/relativeTime";
+import Duration from "dayjs/plugin/duration";
+import Calendar from "dayjs/plugin/calendar";
+
+dayjs.extend(RelativeTime);
+dayjs.extend(Duration);
+dayjs.extend(Calendar);
 
 type Props = {
   processes: Process[];
@@ -60,9 +72,19 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
       width: 100,
     },
     {
+      field: "overview-battery",
+      headerName: "Battery",
+      width: 60,
+    },
+    {
       field: "overview-status",
       headerName: "Status",
       width: 100,
+    },
+    {
+      field: "overview-scheduled",
+      headerName: "Scheduled",
+      minWidth: 170,
     },
     {
       field: "overview-total-crashes",
@@ -189,6 +211,10 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
         "overview-username": process.username,
         "overview-total-crashes": process.total_crashes,
         "overview-status": process.status,
+        "overview-battery": process.battery,
+        "overview-scheduled": process.scheduled
+          ? dayjs(process.scheduled).calendar()
+          : "No",
         "overview-followers": session["overview-followers"],
         "overview-following": session["overview-following"],
         ...session,
@@ -202,7 +228,9 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
       description: "Overview of last activity",
       children: [
         { field: "overview-username" },
+        { field: "overview-battery" },
         { field: "overview-status" },
+        { field: "overview-scheduled" },
         { field: "overview-total-crashes" },
         { field: "overview-followers" },
         { field: "overview-following" },
@@ -287,7 +315,7 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
         }}
         initialState={{
           sorting: {
-            sortModel: [{ field: "overview-username", sort: "desc" }],
+            sortModel: [{ field: "overview-username", sort: "asc" }],
           },
         }}
       />

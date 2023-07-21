@@ -108,33 +108,40 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       setTimeout(async () => {
         event.preventDefault();
         // call terminateProcess
-        const result = await fetch(
-          `${URLcondition}api/fetchProcesses?${new URLSearchParams({
-            username: proc.username,
-          })}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "text/plain",
-            },
-          }
-        );
-        const data = await result.text();
-        const _processes = data.split("\n").map((p) =>
-          p
-            .split("   ")
-            .filter((s) => s.length)
-            .join(" ")
-        );
-        // remove all elements except the last one.
-        const command = _processes[0];
-        // get pid of command
-        const pid = command
-          .split(" ")
-          .filter((elem) => elem.trim() !== "")[1]
-          .trim();
+        // const result = await fetch(
+        //   `${URLcondition}api/fetchProcesses?${new URLSearchParams({
+        //     username: proc.username,
+        //   })}`,
+        //   {
+        //     method: "GET",
+        //     headers: {
+        //       "Content-Type": "text/plain",
+        //     },
+        //   }
+        // );
+        // const data = await result.text();
+        // const _processes = data.split("\n").map((p) =>
+        //   p
+        //     .split("   ")
+        //     .filter((s) => s.length)
+        //     .join(" ")
+        // );
+        // // remove all elements except the last one.
+        // const command = _processes[0];
+        // // get pid of command
+        // const pid = command
+        //   .split(" ")
+        //   .filter((elem) => elem.trim() !== "")[1]
+        //   .trim();
+        const result = await axios.post(`${URLcondition}api/getPidWindows`, {
+          username: proc.username,
+        });
+        const data = result.data;
+        console.log({ data });
         await fetch(
-          `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+          `${URLcondition}api/terminateProcess?${new URLSearchParams({
+            pid: " ",
+          })}`,
           {
             method: "GET",
             headers: {
@@ -176,33 +183,13 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     }
     event.preventDefault();
     // call terminateProcess
-    const result = await fetch(
-      `${URLcondition}api/fetchProcesses?${new URLSearchParams({
-        username: proc.username,
-      })}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "text/plain",
-        },
-      }
-    );
-    const data = await result.text();
-    const _processes = data.split("\n").map((p) =>
-      p
-        .split("   ")
-        .filter((s) => s.length)
-        .join(" ")
-    );
-    // remove all elements except the last one.
-    const command = _processes[0];
-    // get pid of command
-    const pid = command
-      .split(" ")
-      .filter((elem) => elem.trim() !== "")[1]
-      .trim();
+    const result = await axios.post(`${URLcondition}api/getPidWindows`, {
+      username: proc.username,
+    });
+    const data = result.data;
+    console.log({ data });
     await fetch(
-      `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+      `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid: "" })}`,
       {
         method: "GET",
         headers: {
@@ -479,8 +466,13 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         deviceId: process.device.id,
       });
       const data: string = result.data;
-      const fData: string = `${data.trim().split(":")[1]}%`.trim();
-      console.log({ fData });
+      console.log({ data });
+      let fData: string = "";
+      if (data.includes(`device '${process.device.id}' not found`)) {
+        fData = "X";
+      } else {
+        fData = `${data.trim().split(":")[1]}%`.trim();
+      }
       process.battery = fData;
       addToPool(process);
     });

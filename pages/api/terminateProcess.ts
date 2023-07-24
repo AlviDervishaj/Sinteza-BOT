@@ -12,7 +12,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
   else {
     log(`[INFO] Killing bot...`);
     // taskkill /F /PID
-    const cmd: ChildProcessWithoutNullStreams = spawn(`kill -9 ${pid}`, { shell: true });
+    const cmd: ChildProcessWithoutNullStreams = spawn(`taskkill /F /PID ${pid}`, { shell: true });
     log('[INFO] Killed bot');
     transferChildProcessOutput(cmd, res);
   }

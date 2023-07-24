@@ -7,4 +7,4 @@ export type {
     SessionProfile, Sessions
 } from "./Types";
 export { SessionProfileSkeleton, ConfigRows } from "./Types";
-export { URLcondition, formatDate, intervals, oneWeekAway } from "./utils";
+export { URLcondition, formatDate, intervals, oneWeekAway, throttle, debounce } from "./utils";

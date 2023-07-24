@@ -92,12 +92,12 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
       width: 70,
     },
     {
-      field: "overview-followers",
+      field: "overview-following",
       headerName: "Followers",
       width: 100,
     },
     {
-      field: "overview-following",
+      field: "overview-followers",
       headerName: "Following",
       width: 100,
     },
@@ -132,14 +132,14 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
       width: 40,
     },
     {
-      field: "weekly-average-follows",
-      headerName: "Follows",
-      width: 68,
-    },
-    {
       field: "weekly-average-unfollows",
       headerName: "Unfollows",
       width: 80,
+    },
+    {
+      field: "weekly-average-follows",
+      headerName: "Follows",
+      width: 68,
     },
     {
       field: "weekly-average-stories-watched",
@@ -207,6 +207,7 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
     return processes.map((process) => {
       const session = process.session;
       return {
+        ...session,
         id: uuidv5(process.username, uuidv5.URL),
         "overview-username": process.username,
         "overview-total-crashes": process.total_crashes,
@@ -217,7 +218,6 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
           : "No",
         "overview-followers": session["overview-followers"],
         "overview-following": session["overview-following"],
-        ...session,
       };
     });
   }, [processes]);

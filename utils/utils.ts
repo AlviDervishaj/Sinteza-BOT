@@ -8,6 +8,32 @@ export const oneWeekAway = () => {
     const inOneWeek = now.setDate(now.getDate() + 7);
     return new Date(inOneWeek);
 }
+
+// Delay api calls until x 
+export const debounce = <T extends unknown[]>(func: (...args: T) => void, delay: number) => {
+    let timerId: NodeJS.Timeout;
+
+    return (...args: T) => {
+        clearTimeout(timerId);
+        timerId = setTimeout(() => func(...args), delay);
+    };
+};
+
+
+// limit the rate of api calls to once every x ms
+export const throttle = <T extends unknown[]>(func: (...args: T) => void, limit: number) => {
+    let inThrottle = false;
+
+    return (...args: T) => {
+        if (!inThrottle) {
+            func(...args);
+            inThrottle = true;
+            setTimeout(() => (inThrottle = false), limit);
+        }
+    };
+};
+
+
 export const intervals = [
     {
         id: '1m',

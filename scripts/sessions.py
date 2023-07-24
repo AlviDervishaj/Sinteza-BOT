@@ -40,11 +40,6 @@ sessionPath = os.path.join(os.path.dirname(
 class GenerateReports():
 
     def run(self, username, followers_now, following_now):
-        self.followers_now = followers_now
-        self.following_now = following_now
-        self.time_left = None
-        self.username = username
-
         def telegram_bot_sendtext(text):
             return logger(text)
 
@@ -140,8 +135,8 @@ class GenerateReports():
         followers_before = int(df["followers"].iloc[-1])
         following_before = int(df["following"].iloc[-1])
         statString = {
-            "overview-followers": f"{self.followers_now} ({self.followers_now - followers_before:+})",
-            "overview-following": f"{self.following_now} ({self.following_now - following_before:+})",
+            "overview-followers": f"{followers_now}",
+            "overview-following": f"{following_now}",
             "last-session-activity-botting": f"{str(df['duration'].iloc[-1].astype(int))}",
             "last-session-activity-likes": f"{str(df['likes'].iloc[-1])}",
             "last-session-activity-follows": f"{str(df['followed'].iloc[-1])}",

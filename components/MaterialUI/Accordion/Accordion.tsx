@@ -147,7 +147,7 @@ export const Accordion: FC<Props> = ({
                 fontWeight: "bold",
               }}
             >
-              {process.username}
+              {process.username} - {process.device.name}
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -165,7 +165,7 @@ export const Accordion: FC<Props> = ({
                       Start bot
                     </Button>
                   </Tooltip>
-                  <ChangeBotConfig process={process} />
+                  {/* <ChangeBotConfig process={process} /> */}
                   <Tooltip title="Remove bot from pool." arrow>
                     <Button
                       variant="outlined"
@@ -193,6 +193,7 @@ export const Accordion: FC<Props> = ({
                 icon="info"
                 variant="contained"
                 color="primary"
+                key={process.device.id}
                 text={
                   isLoading ? (
                     <CircularProgress color="inherit" size={25} />

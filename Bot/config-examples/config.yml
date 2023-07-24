@@ -27,7 +27,7 @@ dont-type: false
 total-crashes-limit: 5
 count-app-crashes: false
 change-source-if-crash: true
-relog-after-block: true
+relog-after-block: false
 relog-delay: 30
 shuffle-jobs: true
 truncate-sources: 2-5
@@ -51,7 +51,7 @@ hashtag-likers-top: ""
 # place-likers-recent: [place1, place2]
 # interact-from-file: [usernames1.txt 10-15, usernames2.txt 3]
 # posts-from-file: posts.txt
-feed: 2-5 # is the number of likes you will give in feed
+feed: 1-3 # is the number of likes you will give in feed
 # welcoming: 3-5 # welcoming new members with sentences in pm_welcome.txt inside account folder
 
 ## Special modifier for jobs and sources
@@ -60,21 +60,21 @@ watch-photo-time: 3-4
 can-reinteract-after: 48 # the amount of hours that have to pass from the last interaction
 can-recheck-after: 48 # the amount of hours that have to pass from the last check
 delete-interacted-users: true
-mute-posts-after-follow: false
-mute-stories-after-follow: false
+mute-posts-after-follow: true
+mute-stories-after-follow: true
 
 ## Unfollow (unfollow jobs)
-unfollow: 10-20
-unfollow-any: 10-20
-unfollow-non-followers: "0"
-unfollow-any-non-followers: 10-20
-unfollow-any-followers: 10-20
+# unfollow: 10-20
+# unfollow-any: 10-20
+unfollow-non-followers: 10-15
+# unfollow-any-non-followers: 10-20
+# unfollow-any-followers: 10-20
 # unfollow-from-file: [usernames1.txt 7-15, usernames2.txt 6]
 
 ## Special modifier for unfollow jobs
 sort-followers-newest-to-oldest: false
 unfollow-delay: 15
-unfollow-skip-limit: "0"
+unfollow-skip-limit: 100
 
 ## Remove followers (active jobs)
 # remove-followers-from-file: [remove1.txt 5-10, remove2.txt 6]
@@ -101,13 +101,13 @@ stories-count: 1-2
 stories-percentage: 30-40
 carousel-count: 2-3
 carousel-percentage: 60-70
-max-comments-pro-user: 1-2
+# max-comments-pro-user: 1-2
 # comment-percentage: 30-40
 # pm-percentage: 30-40
 interact-percentage: 30-40
-follow-percentage: 30-40
+follow-percentage: 80-100
 follow-limit: 50
-skipped-list-limit: 10-15
+skipped-list-limit: 30-35
 skipped-posts-limit: 5
 fling-when-skipped: 0
 min-following: 100
@@ -141,7 +141,7 @@ end-if-pm-limit-reached: false
 # Scheduling
 ##############################################################################
 
-working-hours: [8.00-17.00]
+# working-hours: [8.00-17.00]
 time-delta: 10-15
 repeat: 280-320
 total-sessions: -1 # -1 or commented for infinite sessions

@@ -57,6 +57,8 @@ import {
   URLcondition,
   start_bot,
   BotFormData,
+  throttle,
+  debounce,
 } from "../utils";
 // Dayjs
 import dayjs from "dayjs";
@@ -107,34 +109,16 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       // execute callback after bot started.
       setTimeout(async () => {
         event.preventDefault();
-        // call terminateProcess
-        const result = await fetch(
-          `${URLcondition}api/fetchProcesses?${new URLSearchParams({
-            username: proc.username,
-          })}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "text/plain",
-            },
-          }
-        );
-        const data = await result.text();
-        const _processes = data.split("\n").map((p) =>
-          p
-            .split("   ")
-            .filter((s) => s.length)
-            .join(" ")
-        );
-        // remove all elements except the last one.
-        const command = _processes[0];
-        // get pid of command
-        const pid = command
-          .split(" ")
-          .filter((elem) => elem.trim() !== "")[1]
-          .trim();
+        const result = await axios.post(`${URLcondition}api/getPidWindows`, {
+          username: proc.username,
+        });
+        const data: string = result.data;
+        console.log({data});
+        const pid: string = data.split("python.exe")[1].split("RDP-Tcp#0")[0].trim();
         await fetch(
-          `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+          `${URLcondition}api/terminateProcess?${new URLSearchParams({
+            pid,
+          })}`,
           {
             method: "GET",
             headers: {
@@ -176,33 +160,31 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     }
     event.preventDefault();
     // call terminateProcess
-    const result = await fetch(
-      `${URLcondition}api/fetchProcesses?${new URLSearchParams({
-        username: proc.username,
-      })}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "text/plain",
-        },
-      }
-    );
-    const data = await result.text();
-    const _processes = data.split("\n").map((p) =>
-      p
-        .split("   ")
-        .filter((s) => s.length)
-        .join(" ")
-    );
-    // remove all elements except the last one.
-    const command = _processes[0];
-    // get pid of command
-    const pid = command
-      .split(" ")
-      .filter((elem) => elem.trim() !== "")[1]
-      .trim();
+    const result = await axios.post(`${URLcondition}api/getPidWindows`, {
+      username: proc.username,
+    });
+    const data: string = result.data;
+    if(data === ''){
+      proc.status = "STOPPED";
+      proc.result += "\n[INFO] Bot stopped by user.\n";
+      axios
+        .post(`${URLcondition}api/sendStatusToTelegram`, {
+          username: proc.username,
+        })
+        .then((res) => {
+          proc.result += res.data;
+        });
+      enqs(`${proc.username} sent to telegram.`, {
+        variant: "info",
+        action: notifyActions,
+        autoHideDuration: 2000,
+      });
+      // add it to previous processes
+      addToPool(proc);
+    }
+    const pid: string = data.split("python.exe")[1].split("RDP-Tcp#0")[0].trim();
     await fetch(
-      `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid })}`,
+      `${URLcondition}api/terminateProcess?${new URLSearchParams({ pid: pid })}`,
       {
         method: "GET",
         headers: {
@@ -332,7 +314,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const data = response.data;
     console.log({ data });
   }, []);
-
   // update a process's result
   const updateProcessResult = useCallback(
     (_process: Process, output: string) => {
@@ -356,6 +337,9 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
               getSession(process);
               deleteOlderLogs(process.username);
             } else if (
+              output.includes(
+                "This kind of exception will stop the bot (no restart)."
+              ) ||
               output.includes(
                 "This kind of exception will stop the bot (no restart)."
               ) ||
@@ -418,6 +402,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       return;
     }
     const data = result.data as ConfigRowsSkeleton;
+    console.log("HERE");
     process.session = data;
     addToPool(process);
     return;
@@ -479,8 +464,13 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         deviceId: process.device.id,
       });
       const data: string = result.data;
-      const fData: string = `${data.trim().split(":")[1]}%`.trim();
-      console.log({ fData });
+      console.log({ data });
+      let fData: string = "";
+      if (data.includes(`device '${process.device.id}' not found`)) {
+        fData = "X";
+      } else {
+        fData = `${data.trim().split(":")[1]}%`.trim();
+      }
       process.battery = fData;
       addToPool(process);
     });

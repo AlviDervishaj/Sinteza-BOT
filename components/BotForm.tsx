@@ -89,6 +89,7 @@ export const BotForm: FC<Props> = ({
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
   const [scheduledTime, setScheduledTime] = useState<Dayjs | null>(dayjs());
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
+  const _devices: {id: string, name: string}[] = [];
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
     device: { id: "", name: "" },
@@ -350,7 +351,11 @@ export const BotForm: FC<Props> = ({
                     }))
                   }
                 >
-                  {devices.length > 0 ? (
+                  {devices.sort((a, b) => {
+                    if(a.name < b.name) return -1;
+                    else if (a.name == b.name) return 0;
+                    else return 1;
+                  }) && devices.length > 0 ? (
                     devices.map((device) => (
                       <MenuItem key={device.id} value={device.id}>
                         {device.name}

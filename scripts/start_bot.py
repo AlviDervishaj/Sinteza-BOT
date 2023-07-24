@@ -22,4 +22,4 @@ command = 'python' if sys.platform.startswith(
 output = subprocess.Popen(
     [command, run_path, '--config',  config_path])
 print(f"[INFO] Bot for {_instagram_username} started.")
-print(f"{output.stdout.read() if output.stdout else 'No output'}")
+print(f"{output.stdout.read() if output.stdout else ''}")

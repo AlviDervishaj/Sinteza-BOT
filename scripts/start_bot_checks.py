@@ -64,7 +64,11 @@ def change_keys_in_config(username):
         if config in data:
             if (data[config] == customConfig[config]):
                 _print(f"[INFO] {config.capitalize()} : DEFAULT")
+                continue
             if type(customConfig[config]) == list:
+                # explicit blogger followers option
+                if(config == "blogger-followers"):
+                    data[config] = data[config] 
                 if customConfig[config] != []:
                     _print(
                         f"[INFO] Changing {config} from {data[config]} to {customConfig[config]}")
@@ -72,8 +76,6 @@ def change_keys_in_config(username):
                         customConfig[config])
                     customConfig[config].fa.set_flow_style()
                     data[config] = customConfig[config]
-                else:
-                    data[config] = ""
             elif (type(customConfig[config]) == str and str(customConfig[config]) != ""):
                 _print(
                     f"[INFO] Changing {config} from {data[config]} to {customConfig[config]}")

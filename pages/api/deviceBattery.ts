@@ -11,7 +11,7 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
     }
     else {
         log(`[INFO] Getting device battery ...`);
-        const command = `adb -s ${deviceId} shell dumpsys battery | egrep "level: "`;
+        const command = `adb -s ${deviceId} shell dumpsys battery | find "level: "`;
         const cmd: ChildProcessWithoutNullStreams = spawn(command, { shell: true });
         transferChildProcessOutput(cmd, res);
     }

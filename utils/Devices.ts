@@ -2,7 +2,7 @@ export const DevicesList = {
     "R9ZW305K08Z": "A01",
     "R7AT310QB5L": "A02",
     "R7ST405PFVZ": "A03",
-    "R7AT310PKFE": "A04",
+    "R7AT310PKFE": "A04", 
     "R7AT310N6YN": "A05",
     "R7AT310PDHN": "A06",
     "R7ST405MD7M": "A07",
@@ -47,6 +47,4 @@ export const DevicesList = {
     "R7AT310NZMK": "A50",
     "R7ST12LG1QF": "A51",
     "R7ST31L8DWN": "A52",
-    "R7AT30TZY2R": "A53",
-
 }

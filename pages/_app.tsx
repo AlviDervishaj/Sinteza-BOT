@@ -270,7 +270,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       }
       return undefined;
     });
-    console.log(p.length > 0);
     // if process username in pool do nothing
     if (p.length > 0) {
       return;
@@ -308,57 +307,56 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   const updateProcessResult = (_process: Process, output: string) => {
     if (!_process.result.includes(output)) {
       _process.result += output;
+      handleCrashesOutput(output, _process);
+      if (output.includes(`INFO | Hello, @${_process.username}`)) {
+        const c = output.split(" ").filter((el) => el);
+        const followers = parseInt(c[8]);
+        const following = parseInt(c[11]);
+        updateProcessFollowings(_process, following, followers);
+        readConfig(_process);
+      } else if (output.includes("INFO | Current active-job:")) {
+        // TODO: display current active job
+      } else if (output.includes("INFO | Next session will start at:")) {
+        _process.status = "WAITING";
+        getSession(_process);
+        deleteOlderLogs(_process.username);
+      } else if (
+        output.includes(
+          "This kind of exception will stop the bot (no restart)."
+        ) ||
+        output.includes(
+          `RuntimeError: USB device ${_process.device.id} is offline`
+        ) ||
+        output.includes(
+          `adbutils.errors.AdbError: device '${_process.device.id}' not found`
+        )
+      ) {
+        _process.status = "STOPPED";
+        _process.total_crashes = 5;
+        axios
+          .post(`${URLcondition}/sendStatusToTelegram`, {
+            username: _process.username,
+          })
+          .then((res) => {
+            _process.result += res.data;
+            return _process;
+          });
+      } else if (output.includes("INFO | Completed sessions:")) {
+        const tSessions = output.split("INFO | Completed sessions: ")[1];
+        _process.total = parseInt(tSessions);
+      } else if (
+        output.includes("INFO | -------- FINISH: ") ||
+        output.includes("INFO | This bot is backed with love by me for free")
+      ) {
+        _process.status = "FINISHED";
+        readConfig(_process);
+        getSession(_process);
+      }
+      updateProcessesPool(_process);
     }
-    handleCrashesOutput(output, _process);
-    if (output.includes(`INFO | Hello, @${_process.username}`)) {
-      const c = output.split(" ").filter((el) => el);
-      const following = parseInt(c[8]);
-      const followers = parseInt(c[11]);
-      updateProcessFollowings(_process, following, followers);
-      readConfig(_process);
-    } else if (output.includes("INFO | Current active-job:")) {
-      // TODO: display current active job
-    } else if (output.includes("INFO | Next session will start at:")) {
-      _process.status = "WAITING";
-      getSession(_process);
-      deleteOlderLogs(_process.username);
-    } else if (
-      output.includes(
-        "This kind of exception will stop the bot (no restart)."
-      ) ||
-      output.includes(
-        `RuntimeError: USB device ${_process.device.id} is offline`
-      ) ||
-      output.includes(
-        `adbutils.errors.AdbError: device '${_process.device.id}' not found`
-      )
-    ) {
-      _process.status = "STOPPED";
-      _process.total_crashes = 5;
-      axios
-        .post(`${URLcondition}/sendStatusToTelegram`, {
-          username: _process.username,
-        })
-        .then((res) => {
-          _process.result += res.data;
-          return _process;
-        });
-    } else if (output.includes("INFO | Completed sessions:")) {
-      const tSessions = output.split("INFO | Completed sessions: ")[1];
-      _process.total = parseInt(tSessions);
-      console.log({ tSessions });
-    } else if (
-      output.includes("INFO | -------- FINISH:") ||
-      output.includes("INFO | This bot is backed with love by me for free")
-    ) {
-      _process.status = "FINISHED";
-      readConfig(_process);
-      getSession(_process);
-    }
-    updateProcessesPool(_process);
   };
 
-  const throttledProcessResult = throttle(updateProcessResult, 1000 * 10);
+  const throttledProcessResult = throttle(updateProcessResult, 1000);
 
   // get session data for a process
   const getSession = async (process: Process) => {
@@ -549,7 +547,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
                 devices={devices}
                 killBot={killBot}
                 addToPool={addToPool}
-                updateProcessResult={throttledProcessResult}
+                updateProcessResult={updateProcessResult}
                 processes={processes}
               />
             </Box>
@@ -575,7 +573,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
                 >
                   <ShowProcesses
                     text="Details"
-                    updateProcessResult={throttledProcessResult}
+                    updateProcessResult={updateProcessResult}
                     killBot={killBot}
                     noProcessesText="No Processes currently running..."
                     processes={processes}

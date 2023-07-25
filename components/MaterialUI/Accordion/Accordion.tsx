@@ -1,4 +1,4 @@
-import { useState, SyntheticEvent, FC } from "react";
+import { useState, SyntheticEvent, FC, memo } from "react";
 import {
   Typography,
   AccordionSummary,
@@ -30,12 +30,12 @@ type Props = {
   killBot: (event: any, process: Process) => void;
 };
 
-export const Accordion: FC<Props> = ({
+export const Accordion: FC<Props> = memo<Props>(function Accordion({
   processes,
   removeProcessFromPool,
   updateProcessResult,
   killBot,
-}) => {
+}) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
@@ -229,4 +229,4 @@ export const Accordion: FC<Props> = ({
       ))}
     </Box>
   );
-};
+});

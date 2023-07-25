@@ -39,7 +39,7 @@ export const Output: FC<Props> = ({ data }) => {
             color: "#2b2d42",
           }}
         >
-          {data && data}
+          {data}
         </Typography>
       </Box>
     </>

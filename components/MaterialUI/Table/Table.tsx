@@ -1,4 +1,4 @@
-import { FC, useState, useMemo } from "react";
+import { FC, useState, useMemo, memo } from "react";
 // uuid
 import { v5 as uuidv5 } from "uuid";
 import {
@@ -62,7 +62,10 @@ const GridToolbar = () => {
   );
 };
 
-export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
+export const ProcessesTable = memo<Props>(function Table({
+  processes,
+  getSession,
+}) {
   const [loading, setLoading] = useState<boolean>(true);
 
   const ConfigCols: GridColDef[] = [
@@ -232,10 +235,10 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
           ? dayjs(process.scheduled).calendar()
           : "No",
         "overview-total-sessions": process.total,
-        "overview-starting-followers": process.following,
-        "overview-starting-following": process.followers,
-        "overview-followers": session["overview-following"],
-        "overview-following": session["overview-followers"],
+        "overview-starting-followers": process.followers,
+        "overview-starting-following": process.following,
+        "overview-followers": session["overview-followers"],
+        "overview-following": session["overview-following"],
       };
     });
   }, [processes]);
@@ -342,4 +345,4 @@ export const ProcessesTable: FC<Props> = ({ processes, getSession }) => {
       />
     </Box>
   );
-};
+});

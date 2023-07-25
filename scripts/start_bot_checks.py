@@ -92,6 +92,8 @@ def change_keys_in_config(username):
             _print(f"[INFO] Skipping `{config}`")
     _print(f"[INFO] Writing to {config_path}")
     with open(config_path, "w") as fp:
+        yaml.default_flow_style = True
+        yaml.width = float("inf")
         yaml.dump(data, fp)
 
 

@@ -176,7 +176,6 @@ export const BotForm: FC<Props> = ({
       deviceId: device,
     });
     const data = result.data;
-    console.log({ data });
     const fBattery: string = data.trim().split(":")[1];
     return fBattery.trim();
   };

@@ -16,7 +16,7 @@ export default function POST(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   log('[INFO] Starting Bot ...');
-  const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+  const command: string = "python";
   const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${path.join(process.cwd(),
     'scripts', 'start_bot.py',)
     }`,

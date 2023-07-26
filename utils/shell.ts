@@ -16,7 +16,7 @@ export const checkOutputLogs = (output: string) => {
   else if (output.includes("INFO | Duration")) return true;
   else if (output.includes("INFO | You have logged out from")) return true;
   else if (output.includes("INFO | -------- START:")) return true;
-  else if (output.includes("INFO | Current active-job:")) return true;
+  else if (output.includes("INFO | Current active-job: ")) return true;
   else if (output.includes("INFO | Completed sessions:")) return true;
   else if (output.includes("INFO | TOTAL")) return true;
   else if (output.includes("INFO | Completed sessions:")) return true;
@@ -37,7 +37,7 @@ export const checkOutputErrors = (output: string) => {
   else if (output.includes("ERROR | Something is keeping closing IG APP. Please check your logcat to understand the reason! `adb logcat`")) return true;
   else if (output.includes("ERROR | Cannot get followers count text")) return true;
   else if (output.includes("ERROR | Cannot get following count text")) return true;
-  else if (output.includes("ERROR | Reached crashes limit.Bot has crashed too much! Please check what's going on.")) return true;
+  else if (output.includes("ERROR | Reached crashes limit.")) return true;
   else return false;
 };
 
@@ -118,20 +118,21 @@ export function transferChildOutputWithConditions(
       checkOutputCritical(output)
     ) {
       const chunkString = chunk.toString("utf-8");
+      // remove empty lines 
+      const fData = chunkString.split("\n").map((line: string) => line).join("\n");
       res.write(
-        chunkString
-          .split("\n")
-          .map((line: string) => line)
-          .join("\n"),
+        fData,
         "utf-8"
       );
     }
+    else return;
   });
 
   res.writeHead(200, {
-    "Content-Type": "text/event-stream",
+    // event-stream
+    "Content-Type": "text/plain",
     "Cache-Control": "no-cache",
-    "Content-Encoding": "none",
+    "Content-Encoding": "utf-8",
   });
 
   cmd.stdout.pipe(res);

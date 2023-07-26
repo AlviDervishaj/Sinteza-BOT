@@ -10,7 +10,7 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
         res.end("[ERROR] Username is not valid.");
         return;
     }
-    const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+    const command: string ="python";
     const cmd: ChildProcessWithoutNullStreams = spawn(command,
         [path.join(process.cwd(), 'scripts', 'read_config.py')],
         { shell: true }

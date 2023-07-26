@@ -43,9 +43,7 @@ export const start_bot = async (
   const reader = response.body?.getReader();
   if (reader) {
     const result = await streamResponse(reader, onProgress);
-    return result.split('\n').filter((line) => {
-      return !line.startsWith('[Error]')
-    }).join('\n')
+    return result
   }
   else return false;
 }

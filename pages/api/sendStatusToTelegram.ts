@@ -11,7 +11,7 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
         return;
     }
     const _path: string = path.join(process.cwd(), 'scripts', 'send_data_to_telegram.py');
-    const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+    const command: string = "python";
     const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${_path}`, { shell: true });
     log(`[INFO] Sending ${username}'s status to telegram ...`);
     cmd.stdin.write(username);

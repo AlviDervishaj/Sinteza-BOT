@@ -44,8 +44,7 @@ import {
   Navigation,
   Output,
   ProcessesTable,
-  ShowProcesses,
-  Snackbar,
+  ShowProcesses
 } from "../components";
 
 // Utils
@@ -57,9 +56,7 @@ import {
   GetSessionFromPython,
   DevicesList,
   URLcondition,
-  start_bot,
-  BotFormData,
-  SessionConfigSkeleton,
+  pidFormattingLinux,
 } from "../utils";
 
 // Dayjs
@@ -76,7 +73,6 @@ dayjs.extend(Calendar);
 export default function Sinteza({ Component, pageProps }: AppProps) {
   const router: NextRouter = useRouter();
   const scrollToMe = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState<string>("");
   const [data, setData] = useState<string>("");
   const [devices, setDevices] = useState<{ id: string; name: string }[]>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
@@ -102,11 +98,11 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     enqueueSnackbar(message, { variant, action: notifyActions });
     return;
   };
-  const killBot = async (event: any, proc: Process) => {
+
+  const removeSchedule = async (event: any, proc: Process) => {
     if (proc.scheduled !== false) {
       const startTime = dayjs(proc.scheduled).valueOf();
       const timeLeft = startTime - dayjs().valueOf();
-      console.log(timeLeft);
       enqs(`Scheduled Bot to terminate ${proc.scheduled}`, {
         variant: "info",
         action: notifyActions,
@@ -115,13 +111,17 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       // execute callback after bot started.
       setTimeout(async () => {
         event.preventDefault();
-        const result = await axios.post(`${URLcondition}/getPidWindows`, {
+        const result = await axios.post(`${URLcondition}/getPid`, {
           username: proc.username,
         });
         const data = result.data;
-        // ----------   PASTE HERE   ---------- //
-        const pid = " ";
-        // ----------   Between these lines  ---------- //
+        let pid = "";
+        try {
+          pid = pidFormattingLinux(data);
+        } catch (error) {
+          enqs("Switch System variable in env to windows !");
+          return;
+        }
         await fetch(
           `${URLcondition}/terminateProcess?${new URLSearchParams({
             pid,
@@ -142,7 +142,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
         const d = r.data as ConfigRowsSkeleton;
         proc.session = d;
         proc.status = "STOPPED";
-        proc.result += "\n[INFO] Bot stopped by user.\n";
         axios
           .post(`${URLcondition}/sendStatusToTelegram`, {
             username: proc.username,
@@ -155,15 +154,23 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       }, timeLeft + 2000);
       return;
     }
+  }
+
+  const killBot = async (event: any, proc: Process) => {
+    removeSchedule(event, proc);
     event.preventDefault();
     // call terminateProcess
-    const result = await axios.post(`${URLcondition}/getPidWindows`, {
+    const result = await axios.post(`${URLcondition}/getPid`, {
       username: proc.username,
     });
-    const data = result.data;
-    // ----------   PASTE HERE   ---------- //
-    const pid = " ";
-    // ----------   Between these lines  ---------- //
+    const data: string = result.data;
+    let pid = '';
+    try {
+      pid = pidFormattingLinux(data);
+    } catch (error) {
+      enqs("Switch System variable in env to windows !");
+      return;
+    }
     await fetch(
       `${URLcondition}/terminateProcess?${new URLSearchParams({ pid })}`,
       {
@@ -182,7 +189,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const d = r.data as ConfigRowsSkeleton;
     proc.session = d;
     proc.status = "STOPPED";
-    proc.result += "\n[INFO] Bot stopped by user.\n";
+    proc.result += "\n[INFO] Bot stopped by user.";
     axios
       .post(`${URLcondition}/sendStatusToTelegram`, {
         username: proc.username,
@@ -301,6 +308,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       username,
     });
     const data = response.data;
+    console.log({ data });
   }, []);
 
   // update a process's result
@@ -308,7 +316,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     if (!_process.result.includes(output)) {
       _process.result += output;
       handleCrashesOutput(output, _process);
-      if (output.includes(`INFO | Hello, @${_process.username}`)) {
+      if (output.includes("INFO | -------- START: ")) {
+        _process.status = "RUNNING";
+      }
+      else if (output.includes(`INFO | Hello, @${_process.username}`)) {
         const c = output.split(" ").filter((el) => el);
         const followers = parseInt(c[8]);
         const following = parseInt(c[11]);
@@ -418,16 +429,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     });
     notify("Devices Refreshed !", "info");
     logData(
-      `[INFO] ${devices.length} device${
-        devices.length > 1 ? "s" : ""
+      `[INFO] ${devices.length} device${devices.length > 1 ? "s" : ""
       } connected.`
     );
     setDevices(devices);
-  };
-  // display error
-  const displayError = (error: string) => {
-    setError((prevError) => prevError + `${error}\n`);
-    return;
   };
   // display data
   const logData = (data: string) => {
@@ -480,23 +485,23 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const proc =
       p.length > 0
         ? p.map((_p) => {
-            return new Process(
-              _p._device,
-              _p._user.username,
-              _p._user.membership,
-              _p._status,
-              _p._result,
-              _p._total,
-              _p._following,
-              _p._followers,
-              _p._session,
-              _p._config,
-              _p._profile,
-              _p._total_crashes,
-              _p._scheduled,
-              _p._battery
-            );
-          })
+          return new Process(
+            _p._device,
+            _p._user.username,
+            _p._user.membership,
+            _p._status,
+            _p._result,
+            _p._total,
+            _p._following,
+            _p._followers,
+            _p._session,
+            _p._config,
+            _p._profile,
+            _p._total_crashes,
+            _p._scheduled,
+            _p._battery
+          );
+        })
         : [];
     setProcesses(proc);
   });
@@ -540,8 +545,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
                 {...pageProps}
                 setData={setData}
                 logData={logData}
-                displayError={displayError}
-                setError={setError}
                 setDevices={setDevices}
                 getDevices={getDevices}
                 devices={devices}
@@ -572,6 +575,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
                   }}
                 >
                   <ShowProcesses
+                    removeSchedule={removeSchedule}
                     text="Details"
                     updateProcessResult={updateProcessResult}
                     killBot={killBot}

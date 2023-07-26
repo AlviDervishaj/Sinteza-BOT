@@ -1,5 +1,5 @@
 // React
-import { FC, useState, useEffect, Dispatch, SetStateAction } from "react";
+import { FC, useState } from "react";
 
 // Notistack
 import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
@@ -45,11 +45,9 @@ import axios from "axios";
 import { URLcondition } from "../utils";
 
 type Props = {
-  setError: (error: string) => void;
   setData: (data: string) => void;
   logData: (data: string) => void;
   getDevices: () => void;
-  displayError: (error: string) => void;
   devices: { id: string; name: string }[];
   processes: Process[];
   addToPool: (process: Process) => void;
@@ -62,7 +60,6 @@ dayjs.extend(Duration);
 dayjs.extend(Calendar);
 
 export const BotForm: FC<Props> = ({
-  setError,
   getDevices,
   logData,
   devices,
@@ -92,6 +89,7 @@ export const BotForm: FC<Props> = ({
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const [isUnfollowedChecked, setIsUnfollowedChecked] =
     useState<boolean>(false);
+  const [scheduledBots, setScheduledBots] = useState<Process[]>([]);
   const [isHashtagChecked, setIsHashtagChecked] = useState<boolean>(false);
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
@@ -162,13 +160,11 @@ export const BotForm: FC<Props> = ({
     return true;
   };
   const startBotChecks = async () => {
+    // start process
     start_bot_checks(formData, (output: string) => {
       logData(output);
     });
-    // start process
     setAlreadyCalled(false);
-    // const data = await result.text();
-    // logData(data);
   };
 
   const getBatteryPercentage = async (device: string) => {
@@ -222,75 +218,52 @@ export const BotForm: FC<Props> = ({
   };
 
   const checkOptions = () => {
-    //
-    if (isHashtagChecked && isUnfollowedChecked) {
-      // all options selected
-      return "config.yml";
-    }
+    // check if hashtags and unfollowed are checked
     if (isHashtagChecked) {
+      if (isUnfollowedChecked) {
+        // all options selected
+        return ["hashtags", "unfollow"];
+      }
+      if (!isUnfollowedChecked) {
+        return ["hashtags", "follow"];
+      }
+    }
+    if (isUnfollowedChecked) {
+      // all options selected
+      return ["unfollow"];
+    }
+    if (!isUnfollowedChecked) {
+      return ["follow"];
     }
   };
 
-  const callApi = async () => {
-    const _isScheduled = checkScheduledTime();
-    if (alreadyCalled) return;
-    if (checkFormData() !== true) return;
-    setAlreadyCalled(true);
 
-    logData("[INFO] Checking if device is available...");
-    if (checkIfDeviceIsBeingUsed()) {
-      return;
-    }
-    logData("[INFO] Starting bot checks... ");
-    await startBotChecks();
-    // cron job
-    const result = handleSchedule(_isScheduled);
-    if (result !== false && _isScheduled !== false) {
-      notify(
-        `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
-        "info"
-      );
-      const battery = await getBatteryPercentage(formData.device.id);
-      // call api to get device battery
-      const p = new Process(
-        formData.device,
-        formData.username,
-        membership,
-        "WAITING",
-        "[INFO] Waiting for scheduled time...\n",
-        0,
-        0,
-        0,
-        ConfigRows,
-        SessionConfigSkeleton,
-        SessionProfileSkeleton,
-        0,
-        _isScheduled.toString(),
-        `${battery}%`
-      );
-      addToPool(p);
-      setTimeout(() => {
-        logData("[INFO] Starting bot...");
-        if (
-          processes.filter(
-            (p) =>
-              p.username === formData.username &&
-              (p.status === "RUNNING" || p.status === "WAITING")
-          ).length > 0
-        ) {
-          notify("Bot is already running !", "error");
-          return;
-        }
-        start_bot(formData, (output: string) => {
-          updateProcessResult(p, output);
-        });
-        notify("Bot started !", "success");
-        addToPool(p);
-        setAlreadyCalled(false);
-      }, result);
-      return;
-    } else {
-      logData("[INFO] Starting bot...");
+  const scheduleBot = async (result: number, _isScheduled: Dayjs, options: string[] | undefined) => {
+    notify(
+      `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
+      "info"
+    );
+    const battery = await getBatteryPercentage(formData.device.id);
+    // call api to get device battery
+    const p = new Process(
+      formData.device,
+      formData.username,
+      membership,
+      "WAITING",
+      "[INFO] Waiting for scheduled time...\n",
+      0,
+      0,
+      0,
+      ConfigRows,
+      SessionConfigSkeleton,
+      SessionProfileSkeleton,
+      0,
+      _isScheduled.toString(),
+      `${battery}%`
+    );
+    setScheduledBots((previous) => [...previous, p])
+    addToPool(p);
+    setTimeout(() => {
       if (
         processes.filter(
           (p) =>
@@ -301,6 +274,55 @@ export const BotForm: FC<Props> = ({
         notify("Bot is already running !", "error");
         return;
       }
+      if (scheduledBots.filter((p) => p.username === formData.username).length > 0) {
+        notify("Bot already scheduled !", "error");
+        return;
+      }
+      p.status = "RUNNING";
+      start_bot(formData, (output: string) => {
+        updateProcessResult(p, output);
+      });
+      notify("Bot started !", "success");
+      setAlreadyCalled(false);
+    }, result);
+    return;
+  }
+
+  const checkIfUsernameIsRunning = () => {
+    if (
+      processes.filter(
+        (p) =>
+          p.username === formData.username &&
+          (p.status === "RUNNING" || p.status === "WAITING")
+      ).length > 0
+    ) {
+      notify("Bot is already running !", "error");
+      return true;
+    }
+    else return false;
+  }
+
+  const callApi = async () => {
+    const options = checkOptions();
+    const _isScheduled = checkScheduledTime();
+    if (alreadyCalled) return;
+    if (checkFormData() !== true) return;
+    setAlreadyCalled(true);
+    logData("[INFO] Checking if device is available...");
+    if (checkIfDeviceIsBeingUsed()) {
+      return;
+    }
+    if (checkIfUsernameIsRunning()) {
+      return;
+    }
+    logData("[INFO] Starting bot checks... ");
+    await startBotChecks();
+    // cron job
+    const result = handleSchedule(_isScheduled);
+    if (result !== false && _isScheduled !== false) {
+      scheduleBot(result, _isScheduled, options);
+    } else {
+      logData("[INFO] Starting bot...");
       const battery = await getBatteryPercentage(formData.device.id);
       const p = new Process(
         formData.device,
@@ -375,7 +397,11 @@ export const BotForm: FC<Props> = ({
                   }
                 >
                   {devices.length > 0 ? (
-                    devices.map((device) => (
+                    devices.sort((a, b) => {
+                      if (a.name > b.name) return 1;
+                      else if (a.name === b.name) return 0;
+                      else return -1;
+                    }).map((device) => (
                       <MenuItem key={device.id} value={device.id}>
                         {device.name}
                       </MenuItem>
@@ -645,24 +671,6 @@ export const BotForm: FC<Props> = ({
                 </Button>
               </Tooltip>
             </Grid>
-            {/* <Grid item xs={4}>
-              <Button
-                onClick={(event) =>
-                  killBot(
-                    event,
-                    processes.filter(
-                      (p) =>
-                        p.device === formData.device &&
-                        p.username === formData.username
-                    )[0]
-                  )
-                }
-                color="error"
-                variant="contained"
-              >
-                Kill Bot
-              </Button>
-            </Grid> */}
           </Grid>
         </Grid>
       </Container>

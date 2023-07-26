@@ -17,7 +17,7 @@ export default function GET(req: NextApiRequest, res: NextApiResponse) {
     return;
   }
   log('[INFO] Starting checks ...');
-  const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+  const command: string = "python";
   const cmd = spawn(command,
     [path.join(process.cwd(), 'scripts', 'start_bot_checks.py')],
     { shell: true });

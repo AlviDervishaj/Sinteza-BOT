@@ -3,6 +3,7 @@ import sys
 import json
 import collections
 import ruamel.yaml
+from ruamel.yaml.comments import CommentedSeq
 
 yaml = ruamel.yaml.YAML()
 
@@ -28,23 +29,23 @@ customConfig = json.loads(botConfig)
 print(botConfig)
 if not customConfig['username']:
     _print("Please enter a valid instagram username")
-    exit()
+    exit(5)
 if not customConfig['device']:
     _print("Please enter a valid device.")
-    exit()
+    exit(5)
 
 # Remaping keys
 if customConfig['blogger-followers']:
-    customConfig['blogger-followers'] = customConfig['blogger-followers'][0].split(
-        ",")
+    customConfig['blogger-followers'] = \
+            customConfig['blogger-followers'][0].split(",")
 if customConfig['hashtag-likers-top']:
-    customConfig['hashtag-likers-top'] = customConfig['hashtag-likers-top'][0].split(
-        ",")
-if type(customConfig['working-hours']) == list and len(customConfig['working-hours']) == 0:
+    customConfig['hashtag-likers-top'] = \
+        customConfig['hashtag-likers-top'][0].split(",")
+if type(customConfig['working-hours']) == list and \
+        len(customConfig['working-hours']) == 0:
     customConfig['working-hours'] = ["8.30-16.40", "18.15-22.46"]
 elif customConfig['working-hours']:
-    customConfig['working-hours'] = customConfig['working-hours'][0].split(
-        ",")
+    customConfig['working-hours'] = customConfig['working-hours'][0].split(",")
 
 
 def change_keys_in_config(username):
@@ -67,11 +68,11 @@ def change_keys_in_config(username):
                 _print(f"[INFO] {config.capitalize()} : DEFAULT")
                 continue
             if type(customConfig[config]) == list:
-                print(customConfig[config][0])
+                print(customConfig[config])
                 if len(customConfig[config]) > 1 and customConfig[config][0] != "":
                     _print(
                         f"[INFO] Changing {config} from {data[config]} to {customConfig[config]}")
-                    customConfig[config] = ruamel.yaml.comments.CommentedSeq(
+                    customConfig[config] = CommentedSeq(
                         customConfig[config])
                     customConfig[config].fa.set_flow_style()
                     data[config] = customConfig[config]

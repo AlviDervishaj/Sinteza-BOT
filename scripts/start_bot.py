@@ -17,8 +17,7 @@ config_path = os.path.join(os.path.dirname(os.path.dirname(
     __file__)), 'accounts', _instagram_username, 'config.yml')
 
 print(f"[INFO] Starting Bot for {_instagram_username}")
-command = 'python' if sys.platform.startswith(
-    'win32') or sys.platform.startswith('cygwin') else 'python3'
+command = 'python'
 output = subprocess.Popen(
     [command, run_path, '--config',  config_path])
 print(f"[INFO] Bot for {_instagram_username} started.")

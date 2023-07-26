@@ -6,6 +6,8 @@ export type Response = {
   processId: string,
 }
 
+export type Jobs = ['follow'] | ['hashtags', 'follow'] | ['hashtags', 'unfollow']
+
 export type BotFormData = {
   username: string;
   device: { id: string, name: string };

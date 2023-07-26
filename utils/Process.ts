@@ -1,7 +1,15 @@
 
 // uuid
 
-import { ConfigRows, ConfigRowsSkeleton, Session, SessionConfig, SessionConfigSkeleton, SessionProfile, SessionProfileSkeleton } from "./Types";
+import {
+  ConfigRows,
+  ConfigRowsSkeleton,
+  SessionConfig,
+  SessionConfigSkeleton,
+  SessionProfile,
+  SessionProfileSkeleton,
+  Jobs
+} from "./Types";
 let id = 0;
 export type ProcessSkeleton = {
   _device: { id: string, name: string },
@@ -39,6 +47,7 @@ export class Process {
   private _status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED";
   private _config: SessionConfig;
   private _profile: SessionProfile;
+  private _jobsThisSession: Jobs = ['follow'];
 
 
   constructor(
@@ -54,7 +63,8 @@ export class Process {
     profile: SessionProfile = SessionProfileSkeleton,
     _total_crashes: number = 0,
     _scheduled: false | string = false,
-    _battery: string
+    _battery: string,
+    _jobsThisSession: Jobs = ['follow'],
   ) {
     this._user = {
       username,
@@ -72,6 +82,7 @@ export class Process {
     this._session = session ? session : ConfigRows;
     this._scheduled = _scheduled;
     this._battery = _battery;
+    this._jobsThisSession = _jobsThisSession;
     id++;
   }
 
@@ -80,6 +91,14 @@ export class Process {
   }
   set device(device: { id: string, name: string }) {
     this._device = device;
+    return;
+  }
+
+  get jobsThisSession() {
+    return this._jobsThisSession;
+  }
+  set jobsThisSession(newJobs: Jobs) {
+    this._jobsThisSession = newJobs;
     return;
   }
 

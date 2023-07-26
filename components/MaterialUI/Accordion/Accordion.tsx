@@ -19,15 +19,15 @@ import axios from "axios";
 // Components
 import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
-import { ChangeBotConfig } from "../Dialog/Dialog";
 import { Snackbar } from "../Snackbar";
 import { start_bot } from "../../../utils/api-client";
-import { BotFormData, URLcondition } from "../../../utils";
+import { URLcondition } from "../../../utils";
 type Props = {
   removeProcessFromPool: (process: Process) => void;
   processes: Process[];
   updateProcessResult: (process: Process, result: string) => void;
   killBot: (event: any, process: Process) => void;
+  removeSchedule: (event: any, process: Process) => void;
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
@@ -35,6 +35,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   removeProcessFromPool,
   updateProcessResult,
   killBot,
+  removeSchedule,
 }) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -179,7 +180,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                       Start bot
                     </Button>
                   </Tooltip>
-                  <ChangeBotConfig process={process} />
+                  {/* <ChangeBotConfig process={process} /> */}
                   <Tooltip title="Remove bot from pool." arrow>
                     <Button
                       variant="outlined"
@@ -195,7 +196,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                   <Button
                     variant="outlined"
                     color="error"
-                    onClick={(event) => killBot(event, process)}
+                    onClick={(event) => process.scheduled ? removeSchedule(event, process) : killBot(event, process)}
                   >
                     {process.scheduled ? "Remove Schedule" : "Stop"}
                   </Button>

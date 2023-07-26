@@ -12,7 +12,7 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
         return;
     }
     const _path: string = path.join(process.cwd(), 'scripts', 'sessions.py');
-    const command: string = process.env.SYSTEM === "linux" ? "python3" : "python";
+    const command: string ="python";
     const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${_path}`, { shell: true });
     log(`[INFO] Getting session for ${data.username} ...`);
     cmd.stdin.write(JSON.stringify(data));

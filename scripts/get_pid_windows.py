@@ -13,7 +13,8 @@ print(file_path, spawned_args)
 
 def find_python_pid(target_file, target_args):
     for process in psutil.process_iter(['pid', 'name', 'cmdline']):
-        if process.info['name'] == 'python3' and target_args in process.info['cmdline']:
+        if process.info['name'] == 'python.exe' and \
+                target_args in process.info['cmdline']:
             print(process)
             return process.info['pid']
     return None

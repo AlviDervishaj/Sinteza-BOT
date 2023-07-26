@@ -12,7 +12,7 @@ export default async function GET(req: NextApiRequest, res: NextApiResponse) {
     }
     else {
         log(`[INFO] Getting bots ...`);
-        const command: string = process.env.SYSTEM === "linux" ? "ps -aux | egrep 'python3" : "WMIC path win32_process get Caption,Processid,Commandlin | find 'python";
+        const command: string = process.env.SYSTEM === "linux" ? "ps -aux | egrep 'python" : "WMIC path win32_process get Caption,Processid,Commandlin | find 'python";
         const cmd: ChildProcessWithoutNullStreams = spawn(`${command} ${path.join(process.cwd(),
             'Bot', 'run.py')} --config ${path.join(process.cwd(),
                 'accounts', username, 'config.yml')}'`, { shell: true });

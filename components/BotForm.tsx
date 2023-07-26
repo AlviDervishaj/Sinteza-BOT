@@ -279,6 +279,7 @@ export const BotForm: FC<Props> = ({
         return;
       }
       p.status = "RUNNING";
+      p.scheduled = false;
       start_bot(formData, (output: string) => {
         updateProcessResult(p, output);
       });

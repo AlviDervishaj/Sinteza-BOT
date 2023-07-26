@@ -27,7 +27,8 @@ export type ProcessSkeleton = {
   _following: number;
   _followers: number;
   _session: ConfigRowsSkeleton;
-  _profile: SessionProfile
+  _profile: SessionProfile;
+  _jobs: Jobs;
 
 }
 export class Process {
@@ -47,7 +48,7 @@ export class Process {
   private _status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED";
   private _config: SessionConfig;
   private _profile: SessionProfile;
-  private _jobsThisSession: Jobs = ['follow'];
+  private _jobs: Jobs = ['follow'];
 
 
   constructor(
@@ -82,7 +83,7 @@ export class Process {
     this._session = session ? session : ConfigRows;
     this._scheduled = _scheduled;
     this._battery = _battery;
-    this._jobsThisSession = _jobsThisSession;
+    this._jobs = _jobsThisSession;
     id++;
   }
 
@@ -94,11 +95,11 @@ export class Process {
     return;
   }
 
-  get jobsThisSession() {
-    return this._jobsThisSession;
+  get jobs() {
+    return this._jobs;
   }
-  set jobsThisSession(newJobs: Jobs) {
-    this._jobsThisSession = newJobs;
+  set jobs(newJobs: Jobs) {
+    this._jobs = newJobs;
     return;
   }
 

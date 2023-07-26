@@ -68,7 +68,7 @@ def change_keys_in_config(username):
                 _print(f"[INFO] {config.capitalize()} : DEFAULT")
                 continue
             if type(customConfig[config]) == list:
-                print(customConfig[config])
+                print(customConfig[config][0])
                 if len(customConfig[config]) > 1 and customConfig[config][0] != "":
                     _print(
                         f"[INFO] Changing {config} from {data[config]} to {customConfig[config]}")

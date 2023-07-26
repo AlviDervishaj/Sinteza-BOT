@@ -37,6 +37,7 @@ import { Process } from "../utils/Process";
 import {
   BotFormData,
   ConfigRows,
+  Jobs,
   SessionConfigSkeleton,
   SessionProfileSkeleton,
 } from "../utils/Types";
@@ -95,6 +96,7 @@ export const BotForm: FC<Props> = ({
     username: "",
     device: { id: "", name: "" },
     password: "",
+    jobs: ['follow'],
     "speed-multiplier": 1,
     "truncate-sources": "",
     "blogger-followers": [""],
@@ -134,19 +136,19 @@ export const BotForm: FC<Props> = ({
       !formData["blogger-followers"] ||
       formData["blogger-followers"].length === 0
     ) {
-      logData("[INFO] Blogger Followers: DEFAULT");
+      logData("[INFO] Blogger Followers: Commented");
     }
     if (
       !formData["hashtag-likers-top"] ||
       formData["hashtag-likers-top"].length === 0
     ) {
-      logData("[INFO] Hashtag Likes Top: DEFAULT");
+      logData("[INFO] Hashtag Likes Top: Commented");
     }
     if (
       !formData["unfollow-non-followers"] ||
       formData["unfollow-non-followers"].trim() === ""
     ) {
-      logData("[INFO] Unfollow Non Followers: DEFAULT");
+      logData("[INFO] Unfollow Non Followers: Commented");
     }
     if (
       !formData["unfollow-skip-limit"] ||
@@ -217,14 +219,14 @@ export const BotForm: FC<Props> = ({
     return false;
   };
 
-  const checkOptions = () => {
+  const checkOptions = (): Jobs => {
     // check if hashtags and unfollowed are checked
     if (isHashtagChecked) {
       if (isUnfollowedChecked) {
         // all options selected
         return ["hashtags", "unfollow"];
       }
-      if (!isUnfollowedChecked) {
+      else {
         return ["hashtags", "follow"];
       }
     }
@@ -232,13 +234,13 @@ export const BotForm: FC<Props> = ({
       // all options selected
       return ["unfollow"];
     }
-    if (!isUnfollowedChecked) {
+    else {
       return ["follow"];
     }
   };
 
 
-  const scheduleBot = async (result: number, _isScheduled: Dayjs, options: string[] | undefined) => {
+  const scheduleBot = async (result: number, _isScheduled: Dayjs) => {
     notify(
       `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
       "info"
@@ -259,7 +261,8 @@ export const BotForm: FC<Props> = ({
       SessionProfileSkeleton,
       0,
       _isScheduled.toString(),
-      `${battery}%`
+      `${battery}%`,
+      formData.jobs,
     );
     setScheduledBots((previous) => [...previous, p])
     addToPool(p);
@@ -304,7 +307,12 @@ export const BotForm: FC<Props> = ({
   }
 
   const callApi = async () => {
-    const options = checkOptions();
+    let options = checkOptions();
+    // set jobs
+    setFormData((previousData: BotFormData) => ({
+      ...previousData,
+      jobs: options,
+    }))
     const _isScheduled = checkScheduledTime();
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;

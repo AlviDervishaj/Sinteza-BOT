@@ -6,12 +6,13 @@ export type Response = {
   processId: string,
 }
 
-export type Jobs = ['follow'] | ['hashtags', 'follow'] | ['hashtags', 'unfollow']
+export type Jobs = ['follow'] | ['unfollow'] | ['hashtags', 'follow'] | ['hashtags', 'unfollow']
 
 export type BotFormData = {
   username: string;
   device: { id: string, name: string };
   password?: string;
+  jobs: Jobs,
   "speed-multiplier"?: number;
   "truncate-sources"?: string,
   "blogger-followers"?: string[],

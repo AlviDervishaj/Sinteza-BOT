@@ -499,7 +499,8 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             _p._profile,
             _p._total_crashes,
             _p._scheduled,
-            _p._battery
+            _p._battery,
+            _p._jobs,
           );
         })
         : [];

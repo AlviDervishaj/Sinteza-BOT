@@ -72,7 +72,6 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
 
   const handleDevicePreview = async (event: any, process: Process) => {
     event.preventDefault();
-    notify("Opening preview", "info");
     setIsLoading(true);
     const res = await axios.post(`${URLcondition}/previewDevice`, {
       deviceId: process.device.id,
@@ -87,7 +86,6 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
         setIsLoading(false);
         return;
       }
-      notify("Preview Closed", "info");
       // toggle
       setIsLoading(false);
       return;

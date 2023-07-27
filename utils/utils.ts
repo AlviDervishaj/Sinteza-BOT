@@ -86,3 +86,7 @@ export const URLcondition =
   process.env.NODE_ENV === "development"
     ? "/api"
     : "https://sinteza.vercel.app";
+
+
+
+    // GramAddict.core.device_facade.DeviceFacade.JsonRpcError: -32001 Jsonrpc error: <androidx.test.uiautomator.UiObjectNotFoundException> data: UiSelector[RESOURCE_ID_REGEX=android:id/switch_widget], method: objInfo

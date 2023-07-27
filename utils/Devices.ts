@@ -48,5 +48,7 @@ export const DevicesList = {
     "R7ST12LG1QF": "A51",
     "R7ST31L8DWN": "A52",
     "R7AT30TZY2R": "A53",
+    "R7ST219J65W": "Testing",
+    "R7ST10KG7NK": "Testing 2",
     "ca2937e9": "Alvi",
 }

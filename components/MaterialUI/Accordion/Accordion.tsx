@@ -117,6 +117,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
       username: process.username,
       password: "",
       device: process.device,
+      jobs: process.jobs,
     };
     start_bot(data, (output: string) => {
       process.status = "RUNNING";

@@ -115,6 +115,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           username: proc.username,
         });
         const data = result.data;
+        console.log({data});
         let pid = "";
         try {
           pid = pidFormattingLinux(data);
@@ -165,10 +166,13 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     });
     const data: string = result.data;
     let pid = '';
+    console.log({data});
     try {
       pid = pidFormattingLinux(data);
     } catch (error) {
-      enqs("Switch System variable in env to windows !");
+      // could not find process's pid. Meaning the bot is not running
+      proc.status = "STOPPED";
+      updateProcessesPool(proc);
       return;
     }
     await fetch(
@@ -336,8 +340,8 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
           "This kind of exception will stop the bot (no restart)."
         ) ||
         output.includes(
-          `RuntimeError: USB device ${_process.device.id} is offline`
-        ) ||
+          "RuntimeError: USB device"
+        ) || output.includes(` ${_process.device.id} is offline`) ||
         output.includes(
           `adbutils.errors.AdbError: device '${_process.device.id}' not found`
         )
@@ -527,7 +531,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
   if (isLoading)
     return (
       <Backdrop
-        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        sx={{ color: "#fff", zIndex: (theme: any) => theme.zIndex.drawer + 1 }}
         open={isLoading}
       >
         <CircularProgress color="inherit" />

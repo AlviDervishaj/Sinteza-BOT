@@ -163,7 +163,7 @@ export const BotForm: FC<Props> = ({
   };
   const startBotChecks = async () => {
     // start process
-    start_bot_checks(formData, (output: string) => {
+    start_bot_checks({...formData, jobs: checkOptions()}, (output: string) => {
       logData(output);
     });
     setAlreadyCalled(false);
@@ -307,12 +307,6 @@ export const BotForm: FC<Props> = ({
   }
 
   const callApi = async () => {
-    let options = checkOptions();
-    // set jobs
-    setFormData((previousData: BotFormData) => ({
-      ...previousData,
-      jobs: options,
-    }))
     const _isScheduled = checkScheduledTime();
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;
@@ -329,7 +323,7 @@ export const BotForm: FC<Props> = ({
     // cron job
     const result = handleSchedule(_isScheduled);
     if (result !== false && _isScheduled !== false) {
-      scheduleBot(result, _isScheduled, options);
+      scheduleBot(result, _isScheduled);
     } else {
       logData("[INFO] Starting bot...");
       const battery = await getBatteryPercentage(formData.device.id);
@@ -347,9 +341,10 @@ export const BotForm: FC<Props> = ({
         SessionProfileSkeleton,
         0,
         false,
-        `${battery}%`
+        `${battery}%`,
+        checkOptions(),
       );
-      start_bot(formData, (output: string) => {
+      start_bot({...formData, jobs: checkOptions()}, (output: string) => {
         updateProcessResult(p, output);
       });
       notify("Bot started !", "success");

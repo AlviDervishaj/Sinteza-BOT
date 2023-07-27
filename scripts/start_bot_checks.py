@@ -4,8 +4,10 @@ import json
 import collections
 import ruamel.yaml
 from ruamel.yaml.comments import CommentedSeq
+from datetime import datetime
 
 yaml = ruamel.yaml.YAML()
+yaml.preserve_quotes = True
 
 
 LIST_OF_FILES = ['blacklist.txt', 'comments_list.txt', 'config.yml',
@@ -26,7 +28,6 @@ def _print(value: str):
 
 botConfig = sys.stdin.read()
 customConfig = json.loads(botConfig)
-print(botConfig)
 if not customConfig['username']:
     _print("Please enter a valid instagram username")
     exit(5)
@@ -34,19 +35,75 @@ if not customConfig['device']:
     _print("Please enter a valid device.")
     exit(5)
 
-# Remaping keys
+# format as list
 if customConfig['blogger-followers']:
     customConfig['blogger-followers'] = \
             customConfig['blogger-followers'][0].split(",")
+# format as list
 if customConfig['hashtag-likers-top']:
     customConfig['hashtag-likers-top'] = \
         customConfig['hashtag-likers-top'][0].split(",")
+    
+#  default working hours
 if type(customConfig['working-hours']) == list and \
         len(customConfig['working-hours']) == 0:
     customConfig['working-hours'] = ["8.30-16.40", "18.15-22.46"]
+# format as an list
 elif customConfig['working-hours']:
     customConfig['working-hours'] = customConfig['working-hours'][0].split(",")
 
+jobs = customConfig.pop("jobs", "follow")
+
+def get_commented_keys():
+    if jobs[0] == "follow":
+        # comment out the unfollow job
+        return ["hashtag-likers-top", "unfollow-non-followers", "unfollow", "unfollow-any", "unfollow-any-non-followers", "unfollow-any-followers", "total-unfollows-limit"]
+    elif jobs[0] == "unfollow":
+        # comment out the follow job
+        return ["follow-limit", "follow-percentage", "blogger-followers"]
+    elif jobs[0] == "hashtags":
+        if len(jobs) == 2 and jobs[1] == "follow":
+            # comment out the unfollow job
+            return ["unfollow-non-followers", "unfollow", "unfollow-any", "unfollow-any-non-followers", "unfollow-any-followers", "total-unfollows-limit"]
+        elif len(jobs) == 2 and jobs[1] == "unfollow":
+            # comment out the follow job
+            return ["follow-limit", "follow-percentage", "blogger-followers"]
+        else:
+            # comment out the unfollow job and follow job
+            return ["follow-limit", "blogger-followers", "follow-percentage", "unfollow-non-followers", "unfollow", "unfollow-any", "unfollow-any-non-followers", "unfollow-any-followers", "total-unfollows-limit"]
+    else:
+        return ["hashtag-likers-top", "unfollow-non-followers", "unfollow", "unfollow-any", "unfollow-any-non-followers", "unfollow-any-followers", "total-unfollows-limit"]
+
+# def comment_out_keys_in_config(username):
+#     '''
+#     Remove jobs.
+#     '''
+#     config_path = os.path.join(os.path.dirname(os.path.dirname(
+#         __file__)), 'accounts', username, 'config.yml')
+#     temp_path = os.path.join(os.path.dirname(os.path.dirname(
+#         __file__)), 'accounts', username, 'temp.yml')
+#     temp = []
+#     with open(config_path, 'r') as f:
+#         yaml_data = yaml.load(f)
+    
+#     for key in get_commented_keys():
+#         if key in yaml_data:
+#             temp.append({key: yaml_data[key]})
+#             del yaml_data[key]
+#             continue
+#         else:
+#             continue
+#     # store data back in file
+#     with open(config_path, 'w') as f:
+#         yaml.dump(yaml_data, f)
+#     # store to temp file
+#     if(len(temp) > 0):
+#         today = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+#         with open(temp_path, 'w+') as f:
+#             d = {"removedJobs": temp, "timestamp": today, "currentJobs": jobs}
+#             yaml.dump(d, f)
+
+    
 
 def change_keys_in_config(username):
     '''
@@ -68,7 +125,6 @@ def change_keys_in_config(username):
                 _print(f"[INFO] {config.capitalize()} : DEFAULT")
                 continue
             if type(customConfig[config]) == list:
-                print(customConfig[config][0])
                 if len(customConfig[config]) > 1 and customConfig[config][0] != "":
                     _print(
                         f"[INFO] Changing {config} from {data[config]} to {customConfig[config]}")
@@ -91,11 +147,16 @@ def change_keys_in_config(username):
                 continue
         else:
             _print(f"[INFO] Skipping `{config}`")
-    _print(f"[INFO] Writing to {config_path}")
+
+    _print("Commenting out keys...")
     with open(config_path, "w") as fp:
+        _print(f"[INFO] Writing to {config_path}")
         yaml.default_flow_style = True
         yaml.width = float("inf")
         yaml.dump(data, fp)
+    
+    # comment_out_keys_in_config(username)
+
 
 
 # Make the default config files and folders for a user

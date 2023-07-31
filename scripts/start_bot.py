@@ -1,24 +1,28 @@
 import os
 import subprocess
 import sys
+import json
 from dotenv import dotenv_values
 
 env = dotenv_values(os.path.join(os.path.dirname(
     os.path.dirname(__file__)), '.env.development'))
-_instagram_username = sys.stdin.read()
+data = json.loads(sys.stdin.read())
 
-if not _instagram_username:
+if not data["username"]:
     print("Please enter a valid instagram username")
+    exit()
+if not data["config_name"]:
+    print("Please enter a valid config name")
     exit()
 
 run_path = os.path.join(os.path.dirname(
     os.path.dirname(__file__)), 'Bot', 'run.py')
 config_path = os.path.join(os.path.dirname(os.path.dirname(
-    __file__)), 'accounts', _instagram_username, 'config.yml')
+    __file__)), 'accounts', data["username"], data["config_name"])
 
-print(f"[INFO] Starting Bot for {_instagram_username}")
+print(f"[INFO] Starting Bot for {data['username']}")
 command = 'python'
 output = subprocess.Popen(
     [command, run_path, '--config',  config_path])
-print(f"[INFO] Bot for {_instagram_username} started.")
+print(f"[INFO] Bot for {data['username']} started.")
 print(f"{output.stdout.read() if output.stdout else ''}")

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -27,7 +27,7 @@ export const ProfileTable: FC<Props> = ({
 }) => {
   useEffect(() => {
     getSession(process);
-  }, [getSession]);
+  }, [getSession, process]);
   return (
     <Box sx={{ margin: 1 }}>
       <Typography variant="h6" gutterBottom component="div">
@@ -41,7 +41,7 @@ export const ProfileTable: FC<Props> = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {Object.entries(process.profile.profile).map(
+          {Object.entries(process.profile).map(
             ([key, value]: [key: string, value: any], index: number) => (
               <TableRow key={key + index}>
                 <TableCell>{key}</TableCell>

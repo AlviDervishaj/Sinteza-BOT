@@ -16,6 +16,7 @@ export const checkOutputLogs = (output: string) => {
   else if (output.includes("INFO | Duration")) return true;
   else if (output.includes("INFO | You have logged out from")) return true;
   else if (output.includes("INFO | -------- START:")) return true;
+  else if (output.includes("scheduled for this session")) return true;
   else if (output.includes("INFO | Current active-job: ")) return true;
   else if (output.includes("INFO | Completed sessions:")) return true;
   else if (output.includes("INFO | TOTAL")) return true;
@@ -106,7 +107,7 @@ export function transferChildOutputWithConditions(
     console.log("[INFO] FINISHED.\nCODE : ", code);
   });
 
-  cmd.stderr.on("data", (chunk) => {
+  cmd.stderr.on("data", (chunk: string | Buffer) => {
     const output = chunk.toString("utf-8");
     if (
       checkOutputCrashes(output) ||
@@ -117,11 +118,10 @@ export function transferChildOutputWithConditions(
       checkOutputSleeping(output) ||
       checkOutputCritical(output)
     ) {
-      const chunkString = chunk.toString("utf-8");
       // remove empty lines 
-      const fData = chunkString.split("\n").map((line: string) => line).join("\n");
+      const fData = output.split("\n").map((line: string) => line).join("\n");
       res.write(
-        fData,
+        output.endsWith('\n') ? output : `${fData}\n`,
         "utf-8"
       );
     }
@@ -157,9 +157,9 @@ export function transferChildProcessOutput(
   });
 
   res.writeHead(200, {
-    "Content-Type": "text/event-stream",
+    "Content-Type": "text/plain",
     "Cache-Control": "no-cache",
-    "Content-Encoding": "none",
+    "Content-Encoding": "utf-8",
   });
 
   cmd.stdout.pipe(res);

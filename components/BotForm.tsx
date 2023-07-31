@@ -97,6 +97,7 @@ export const BotForm: FC<Props> = ({
     device: { id: "", name: "" },
     password: "",
     jobs: ['follow'],
+    config_name: 'config.yml',
     "speed-multiplier": 1,
     "truncate-sources": "",
     "blogger-followers": [""],
@@ -283,6 +284,7 @@ export const BotForm: FC<Props> = ({
       }
       p.status = "RUNNING";
       p.scheduled = false;
+      p.startTime = Date.now();
       start_bot(formData, (output: string) => {
         updateProcessResult(p, output);
       });
@@ -344,7 +346,7 @@ export const BotForm: FC<Props> = ({
         `${battery}%`,
         checkOptions(),
       );
-      start_bot({...formData, jobs: checkOptions()}, (output: string) => {
+      start_bot(formData, (output: string) => {
         updateProcessResult(p, output);
       });
       notify("Bot started !", "success");
@@ -656,7 +658,7 @@ export const BotForm: FC<Props> = ({
               />
             </Grid>
           </Grid>
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{paddingBottom: '2rem'}}>
             <Grid item>
               <Tooltip title="Start Bot">
                 <Button

@@ -37,7 +37,7 @@ export const start_bot = async (
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(botData),
+    body: JSON.stringify({...botData, config_name: botData.config_name ? botData.config_name : 'config.yml'}),
   });
 
   const reader = response.body?.getReader();

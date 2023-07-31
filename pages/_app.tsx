@@ -21,7 +21,6 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { Close } from "@mui/icons-material";
-
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 // Notistack
@@ -57,6 +56,8 @@ import {
   DevicesList,
   URLcondition,
   pidFormattingLinux,
+  BotFormData,
+  start_bot,
 } from "../utils";
 
 // Dayjs
@@ -64,13 +65,15 @@ import dayjs from "dayjs";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import Duration from "dayjs/plugin/duration";
 import Calendar from "dayjs/plugin/calendar";
-import { throttle } from "../utils/utils";
+import { debounce, throttle } from "../utils/utils";
+import { ReactJSXElement } from "@emotion/react/types/jsx-namespace";
+import { Phones } from "../components/Phones";
 
 dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
 dayjs.extend(Calendar);
 
-export default function Sinteza({ Component, pageProps }: AppProps) {
+export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXElement {
   const router: NextRouter = useRouter();
   const scrollToMe = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<string>("");
@@ -99,7 +102,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     return;
   };
 
-  const removeSchedule = async (event: any, proc: Process) => {
+  const removeSchedule = async (proc: Process) => {
     if (proc.scheduled !== false) {
       const startTime = dayjs(proc.scheduled).valueOf();
       const timeLeft = startTime - dayjs().valueOf();
@@ -110,12 +113,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       });
       // execute callback after bot started.
       setTimeout(async () => {
-        event.preventDefault();
         const result = await axios.post(`${URLcondition}/getPid`, {
           username: proc.username,
         });
         const data = result.data;
-        console.log({data});
         let pid = "";
         try {
           pid = pidFormattingLinux(data);
@@ -157,16 +158,14 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     }
   }
 
-  const killBot = async (event: any, proc: Process) => {
-    removeSchedule(event, proc);
-    event.preventDefault();
+  const killBot = async (proc: Process) => {
+    removeSchedule(proc);
     // call terminateProcess
     const result = await axios.post(`${URLcondition}/getPid`, {
       username: proc.username,
     });
     const data: string = result.data;
     let pid = '';
-    console.log({data});
     try {
       pid = pidFormattingLinux(data);
     } catch (error) {
@@ -193,7 +192,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     const d = r.data as ConfigRowsSkeleton;
     proc.session = d;
     proc.status = "STOPPED";
-    proc.result += "\n[INFO] Bot stopped by user.";
+    proc.result += "\n[INFO] Bot stopped by user.\n";
     axios
       .post(`${URLcondition}/sendStatusToTelegram`, {
         username: proc.username,
@@ -264,8 +263,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     );
   }, []);
 
-  const updateProcessesPoolThrottled = throttle(updateProcessesPool, 1000 * 10);
-
   // Add to Process pool
   const addToPool = (_process: Process) => {
     // check if process username is already in process pool
@@ -289,12 +286,12 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     setProcesses((previous) => [...previous, _process]);
   };
 
-  const addToPoolThrottled = throttle(addToPool, 1000 * 10);
-
   const updateProcessFollowings = useCallback(
     (_process: Process, following: number, followers: number) => {
       _process.following = following;
       _process.followers = followers;
+      _process.profile.followers = followers;
+      _process.profile.following = following;
     },
     []
   );
@@ -307,13 +304,44 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
     process.config = data;
   }, []);
 
-  const deleteOlderLogs = useCallback(async (username: string) => {
-    const response = await axios.post(`${URLcondition}/deleteOlderLogs`, {
-      username,
+  const rotateConfigEvery3Days = async (process: Process) => {
+    console.log(`${process.username} switching to config3.yml...`);
+    await killBot(process);
+    process.configFile = 'config3.yml';
+    process.startTime = Date.now();
+    // start bot
+    const d: BotFormData = {
+      username: process.username,
+      device: process.device,
+      config_name: process.configFile,
+      jobs: process.jobs,
+    }
+    start_bot(d, (output: string) => {
+      updateProcessResult(process, output);
     });
-    const data = response.data;
-    console.log({ data });
-  }, []);
+  };
+
+  const switchConfigAfter2Days = async (process: Process) => {
+    console.log(`${process.username} switching to config2.yml...`);
+    await killBot(process);
+    process.configFile = 'config2.yml';
+    process.startTime = Date.now();
+
+    // start bot
+    const d: BotFormData = {
+      username: process.username,
+      device: process.device,
+      config_name: process.configFile,
+      jobs: process.jobs,
+    }
+    start_bot(d, (output: string) => {
+      updateProcessResult(process, output);
+    });
+  }
+  // 1000 * 60 * 60 * 24 * 2
+
+  const debouncedSwitchConfig = debounce(switchConfigAfter2Days, 1000 * 60 * 5);
+  const debouncedRotateConfig = debounce(rotateConfigEvery3Days, 1000 * 60 * 5);
 
   // update a process's result
   const updateProcessResult = (_process: Process, output: string) => {
@@ -334,7 +362,37 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       } else if (output.includes("INFO | Next session will start at:")) {
         _process.status = "WAITING";
         getSession(_process);
-        deleteOlderLogs(_process.username);
+        const dateNow = dayjs().valueOf();
+        const timeInFirstConfigInHours: number = dayjs().diff(dayjs(_process.startTime), 'hour');
+        const twoDaysLater = dayjs(_process.startTime).add(2, "day").valueOf();
+        const threeDaysLater = dayjs(_process.startTime).add(3, "day").valueOf();
+        const difference2Days = dayjs(twoDaysLater).diff(dayjs(dateNow), 'hour');
+        const difference3Days = dayjs(threeDaysLater).diff(dayjs(dateNow), 'hour');
+        // if config is config2.yml switch to config3.yml after 3 days
+        // meanwhile resume process with config2.yml
+        if (_process.configFile === 'config2.yml') {
+          _process.result += `Time in config2.yml: ${difference3Days} hours`;
+          if (difference3Days <= 0) {
+            debouncedRotateConfig(_process);
+          }
+        }
+        // if config is config3.yml switch to config2.yml after one day of work
+        else if (_process.configFile === 'config3.yml') {
+          const timeInThirdConfig = dayjs(dateNow).diff(dayjs(_process.startTime), 'hour');
+          _process.result += `Time in config3.yml: ${timeInThirdConfig} hours`;
+          if (timeInThirdConfig >= 24) {
+            debouncedSwitchConfig(_process);
+          }
+        }
+        // if config is config1.yml switch to config2.yml after 2 days
+        // meanwhile resume process with config1.yml
+        else {
+          const timeInFirstConfigInMinutes: number = dayjs().diff(dayjs(_process.startTime), 'minutes');
+          _process.result += `Time in config1.yml: ${timeInFirstConfigInHours > 0 ? timeInFirstConfigInHours : timeInFirstConfigInMinutes} ${timeInFirstConfigInHours > 0 ? 'hours' : 'minutes'}`;
+          if (difference2Days <= 0) {
+            debouncedSwitchConfig(_process);
+          }
+        }
       } else if (
         output.includes(
           "This kind of exception will stop the bot (no restart)."
@@ -370,8 +428,6 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
       updateProcessesPool(_process);
     }
   };
-
-  const throttledProcessResult = throttle(updateProcessResult, 1000);
 
   // get session data for a process
   const getSession = async (process: Process) => {
@@ -505,6 +561,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             _p._scheduled,
             _p._battery,
             _p._jobs,
+            _p._configFile
           );
         })
         : [];
@@ -520,10 +577,10 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
 
   // also store in local storage when the user leaves the page
   useEventListener("beforeunload", storeInLS);
-  // save processes in local storage every 15 seconds
-  useInterval(storeInLS, 1000 * 10);
-  // get processes from local storage every 15 second
-  useInterval(getFromLS, 1000 * 10);
+  // save processes in local storage every 25 seconds
+  useInterval(storeInLS, 1000 * 25);
+  // get processes from local storage every 25 seconds
+  useInterval(getFromLS, 1000 * 25);
 
   // get device's battery every 2 minutes
   useInterval(getDevicesBattery, 1000 * 60 * 2);
@@ -562,6 +619,7 @@ export default function Sinteza({ Component, pageProps }: AppProps) {
             {router.pathname === "/" ? (
               <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
                 <Box sx={{ margin: "0 auto", overflow: "auto" }}>
+                  <Phones devices={devices}/>
                   <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
                     Processes
                   </Typography>

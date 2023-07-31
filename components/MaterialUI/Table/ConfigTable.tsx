@@ -53,7 +53,7 @@ export const ConfigTable: FC<Props> = ({
       };
       getConfig();
     } else setConfig(process.config);
-  }, []);
+  }, [mutateProcessConfig, process]);
   return (
     <Box sx={{ margin: 1 }}>
       <Typography variant="h6" gutterBottom component="div">

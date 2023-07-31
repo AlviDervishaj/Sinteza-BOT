@@ -21,13 +21,13 @@ import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
 import { Snackbar } from "../Snackbar";
 import { start_bot } from "../../../utils/api-client";
-import { URLcondition } from "../../../utils";
+import { BotFormData, URLcondition } from "../../../utils";
 type Props = {
   removeProcessFromPool: (process: Process) => void;
   processes: Process[];
   updateProcessResult: (process: Process, result: string) => void;
-  killBot: (event: any, process: Process) => void;
-  removeSchedule: (event: any, process: Process) => void;
+  killBot: (process: Process) => void;
+  removeSchedule: (process: Process) => void;
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
@@ -39,6 +39,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
 }) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
 
   const sortedProcesses = processes.sort((a, b) => {
@@ -111,16 +112,20 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
 
   const startBotAgain = (event: any, process: Process) => {
     event.preventDefault();
+    setIsStarting(true);
     process.scheduled = false;
     process.total_crashes = 0;
-    const data = {
+    process.startTime = Date.now();
+    const data: BotFormData = {
       username: process.username,
       password: "",
       device: process.device,
       jobs: process.jobs,
+      config_name: process.configFile,
     };
     start_bot(data, (output: string) => {
       process.status = "RUNNING";
+      setIsStarting(false);
       updateProcessResult(process, output);
     });
   };
@@ -165,19 +170,29 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Typography>Device: {process.device.name}</Typography>
+            <Typography variant="body1">
+              Config  - {process.configFile}
+            </Typography>
             <Output data={process.result} />
             <Box sx={{ display: "flex", marginTop: "1rem", columnGap: "2rem" }}>
               {process.status !== "RUNNING" && process.status !== "WAITING" ? (
                 <>
                   <Tooltip title="Start bot again." arrow>
+                    <span>
                     <Button
                       variant="outlined"
                       color="info"
+                      key={process.username}
+                      disabled={isStarting}
                       onClick={(event) => startBotAgain(event, process)}
                     >
-                      Start bot
+                      { isStarting ? (
+                        <CircularProgress color="inherit" size={25} />
+                      ) : (
+                        "Start Bot"
+                      )}
                     </Button>
+                    </span>
                   </Tooltip>
                   {/* <ChangeBotConfig process={process} /> */}
                   <Tooltip title="Remove bot from pool." arrow>
@@ -195,7 +210,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                   <Button
                     variant="outlined"
                     color="error"
-                    onClick={(event) => process.scheduled ? removeSchedule(event, process) : killBot(event, process)}
+                    onClick={(event) => process.scheduled ? removeSchedule(process) : killBot(process)}
                   >
                     {process.scheduled ? "Remove Schedule" : "Stop"}
                   </Button>
@@ -215,7 +230,9 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                   )
                 }
                 disabled={isLoading}
-                key={process.device.id}
+                key={`${process.device.id} ${process.username}`}
+                about="Preview Device"
+                aria-label="Preview Device"
                 type="custom"
                 onClick={(event) => handleDevicePreview(event, process)}
                 tooltip="Open Preview"

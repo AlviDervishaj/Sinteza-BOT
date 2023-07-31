@@ -9,9 +9,9 @@ type Props = {
   noProcessesText: string;
   text: string;
   removeProcessFromPool: (process: Process) => void;
-  killBot: (event: any, proc: Process) => void;
+  killBot: (proc: Process) => void;
   updateProcessResult: (process: Process, result: string) => void;
-  removeSchedule: (event: any, proc: Process) => void;
+  removeSchedule: (proc: Process) => void;
 };
 
 export const ShowProcesses: FC<Props> = ({

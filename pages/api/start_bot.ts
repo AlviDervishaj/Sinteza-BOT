@@ -23,7 +23,7 @@ export default function POST(req: NextApiRequest, res: NextApiResponse) {
     { shell: true }
   );
   log("[INFO] Bot started successfully.")
-  cmd.stdin.write(botFormData.username);
+  cmd.stdin.write(JSON.stringify({username: botFormData.username, config_name: botFormData.config_name ? botFormData.config_name : 'config.yml'}));
   cmd.stdin.end();
   transferChildOutputWithConditions(cmd, res);
 }

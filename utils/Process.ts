@@ -1,4 +1,3 @@
-
 // uuid
 
 import {
@@ -8,9 +7,11 @@ import {
   SessionConfigSkeleton,
   SessionProfile,
   SessionProfileSkeleton,
-  Jobs
+  Jobs,
+  ConfigNames
 } from "./Types";
 let id = 0;
+
 export type ProcessSkeleton = {
   _device: { id: string, name: string },
   _scheduled: string | false
@@ -29,6 +30,9 @@ export type ProcessSkeleton = {
   _session: ConfigRowsSkeleton;
   _profile: SessionProfile;
   _jobs: Jobs;
+  _configFile: ConfigNames;
+  _startTime: number;
+
 
 }
 export class Process {
@@ -49,7 +53,8 @@ export class Process {
   private _config: SessionConfig;
   private _profile: SessionProfile;
   private _jobs: Jobs = ['follow'];
-
+  private _configFile: ConfigNames = "config.yml";
+  private _startTime: number;
 
   constructor(
     device: { id: string, name: string },
@@ -66,6 +71,8 @@ export class Process {
     _scheduled: false | string = false,
     _battery: string,
     _jobsThisSession: Jobs = ['follow'],
+    _configFile: ConfigNames = "config.yml",
+    _startTime: number = Date.now()
   ) {
     this._user = {
       username,
@@ -84,6 +91,8 @@ export class Process {
     this._scheduled = _scheduled;
     this._battery = _battery;
     this._jobs = _jobsThisSession;
+    this._configFile = _configFile;
+    this._startTime = _startTime;
     id++;
   }
 
@@ -92,6 +101,24 @@ export class Process {
   }
   set device(device: { id: string, name: string }) {
     this._device = device;
+    return;
+  }
+
+  get configFile() {
+    return this._configFile;
+  }
+
+  set configFile(configFile: ConfigNames) {
+    this._configFile = configFile;
+    return;
+  }
+
+  get startTime(){
+    return this._startTime;
+  }
+
+  set startTime(_startTime: number){
+    this._startTime = _startTime ? _startTime : Date.now();
     return;
   }
 

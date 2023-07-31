@@ -16,7 +16,6 @@ export const Output: FC<Props> = ({ data }) => {
 
   return (
     <>
-      <Typography variant="h5">Output</Typography>
       <Box
         ref={refBox}
         sx={{

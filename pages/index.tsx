@@ -1,9 +1,15 @@
+// NextJs
 import Head from "next/head";
+
+
+// Props
 type Props = {
   devices: string[];
   device: string;
   getDevices: () => void;
 };
+
+// Home 
 export default function Home({}: Props) {
   return (
     <>
@@ -29,7 +35,7 @@ export default function Home({}: Props) {
 
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={`${process.env.BASE_URL}`} />
-        <meta property="twitter:creator" content="@alvi_d1" />
+        <meta property="twitter:creator" content="@empty" />
         <meta property="twitter:title" content="Sinteza " />
         <meta
           property="twitter:description"

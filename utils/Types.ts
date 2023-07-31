@@ -13,6 +13,7 @@ export type BotFormData = {
   device: { id: string, name: string };
   password?: string;
   jobs: Jobs,
+  config_name?: ConfigNames,
   "speed-multiplier"?: number;
   "truncate-sources"?: string,
   "blogger-followers"?: string[],
@@ -324,19 +325,17 @@ export const SessionConfigSkeleton: SessionConfig = {
 }
 
 export type SessionProfile = {
-  profile: {
     posts: number,
     followers: number,
     following: number
-  }
 }
 
+export type ConfigNames =  'config.yml' | 'config2.yml' | 'config3.yml';
+
 export const SessionProfileSkeleton: SessionProfile = {
-  profile: {
     posts: 0,
     followers: 0,
     following: 0
-  }
 }
 
 export type Session = {

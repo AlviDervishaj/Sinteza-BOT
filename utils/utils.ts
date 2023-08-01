@@ -42,8 +42,3 @@ export const pidFormattingLinux = (data: string): string => {
     const pid: string = _formatted_process.split(" ")[1];
     return pid;
 }
-
-export const URLcondition =
-  process.env.NODE_ENV === "development"
-    ? "/api"
-    : "https://sinteza.vercel.app";

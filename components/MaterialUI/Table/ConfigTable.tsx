@@ -9,7 +9,7 @@ import {
   TableBody,
 } from "@mui/material";
 import { Process } from "../../../utils/Process";
-import { URLcondition } from "../../../utils/utils";
+import {  } from "../../../utils/utils";
 
 // Axios
 import axios from "axios";
@@ -35,7 +35,7 @@ export const ConfigTable: FC<Props> = ({
     if (process.status === "RUNNING") {
       const getConfig = async () => {
         const res = await axios.get(
-          `${URLcondition}/getConfig?${new URLSearchParams({
+          `/api/getConfig?${new URLSearchParams({
             username: process.username,
           })}`,
           {

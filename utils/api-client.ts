@@ -1,5 +1,5 @@
 import { BotFormData } from "./Types";
-import { URLcondition } from "./utils";
+import {  } from "./utils";
 
 type ProgressCallback = (output: string) => void;
 // Start bot checks and stream output
@@ -7,7 +7,7 @@ export const start_bot_checks = async (
   botData: BotFormData,
   onProgress: ProgressCallback
 ): Promise<string | false> => {
-  const response: Response = await fetch(`${URLcondition}/start_bot_checks`, {
+  const response: Response = await fetch(`/api/start_bot_checks`, {
     method: "POST",
     cache: "no-cache",
     headers: {
@@ -31,7 +31,7 @@ export const start_bot = async (
   onProgress: ProgressCallback
 ): Promise<string | false> => {
   const response: Response = await fetch(
-    `${URLcondition}/start_bot`, {
+    `/api/start_bot`, {
     method: "POST",
     cache: "no-cache",
     headers: {

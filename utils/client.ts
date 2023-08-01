@@ -1,7 +1,7 @@
-import { URLcondition } from "./utils";
+import {  } from "./utils";
 
 export const readData = async (url: string) => {
-    const response = await fetch(`${URLcondition}${url}`);
+    const response = await fetch(`/api/${url}`);
 
     let reader = response.body?.getReader();
     if (!reader) {

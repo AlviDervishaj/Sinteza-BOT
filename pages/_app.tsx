@@ -54,7 +54,6 @@ import {
   ConfigRowsSkeleton,
   GetSessionFromPython,
   DevicesList,
-  URLcondition,
   pidFormattingLinux,
   BotFormData,
   start_bot,
@@ -70,7 +69,7 @@ import Duration from "dayjs/plugin/duration";
 import Calendar from "dayjs/plugin/calendar";
 import { debounce, throttle } from "../utils/utils";
 import { ReactJSXElement } from "@emotion/react/types/jsx-namespace";
-import { Phones } from "../components/Phones";
+// import { Phones } from "../components/Phones";
 
 dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
@@ -145,7 +144,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       });
       // execute callback after bot started.
       setTimeout(async () => {
-        const result = await axios.post(`${URLcondition}/getPid`, {
+        const result = await axios.post(`/api/getPid`, {
           username: proc.username,
         });
         const data = result.data;
@@ -157,7 +156,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
           return;
         }
         await fetch(
-          `${URLcondition}/terminateProcess?${new URLSearchParams({
+          `/api/terminateProcess?${new URLSearchParams({
             pid,
           })}`,
           {
@@ -172,12 +171,12 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
           followers_now: proc.followers,
           following_now: proc.following,
         };
-        const r = await axios.post(`${URLcondition}/getSession`, _data);
+        const r = await axios.post(`/api/getSession`, _data);
         const d = r.data as ConfigRowsSkeleton;
         proc.session = d;
         proc.status = "STOPPED";
         axios
-          .post(`${URLcondition}/sendStatusToTelegram`, {
+          .post(`/api/sendStatusToTelegram`, {
             username: proc.username,
           })
           .then((res) => {
@@ -193,7 +192,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
   const killBot = async (proc: Process) => {
     removeSchedule(proc);
     // call terminateProcess
-    const result = await axios.post(`${URLcondition}/getPid`, {
+    const result = await axios.post(`/api/getPid`, {
       username: proc.username,
     });
     const data: string = result.data;
@@ -207,7 +206,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       return;
     }
     await fetch(
-      `${URLcondition}/terminateProcess?${new URLSearchParams({ pid })}`,
+      `/api/terminateProcess?${new URLSearchParams({ pid })}`,
       {
         method: "GET",
         headers: {
@@ -220,13 +219,13 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       followers_now: proc.followers,
       following_now: proc.following,
     };
-    const r = await axios.post(`${URLcondition}/getSession`, _data);
+    const r = await axios.post(`/api/getSession`, _data);
     const d = r.data as ConfigRowsSkeleton;
     proc.session = d;
     proc.status = "STOPPED";
     proc.result += "\n[INFO] Bot stopped by user.\n";
     axios
-      .post(`${URLcondition}/sendStatusToTelegram`, {
+      .post(`/api/sendStatusToTelegram`, {
         username: proc.username,
       })
       .then((res) => {
@@ -329,7 +328,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
   );
 
   const readConfig = useCallback(async (process: Process) => {
-    const result = await axios.post(`${URLcondition}/readConfig`, {
+    const result = await axios.post(`/api/readConfig`, {
       username: process.username,
     });
     const data = result.data;
@@ -439,7 +438,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
         _process.status = "STOPPED";
         _process.total_crashes = 5;
         axios
-          .post(`${URLcondition}/sendStatusToTelegram`, {
+          .post(`/api/sendStatusToTelegram`, {
             username: _process.username,
           })
           .then((res) => {
@@ -469,7 +468,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       followers_now: process.followers,
       following_now: process.following,
     };
-    const result = await axios.post(`${URLcondition}/getSession`, _data);
+    const result = await axios.post(`/api/getSession`, _data);
     if (
       result.data ===
       "[ERROR] You have to run the bot at least once to generate a report!"
@@ -496,7 +495,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
 
   // get adb devices
   const getDevices = async () => {
-    const result = await fetch(`${URLcondition}/getDevices`);
+    const result = await fetch(`/api/getDevices`);
     const listOfDevices: string = (await result.text())
       .replace("List of devices attached", "")
       .replace("device", "");
@@ -512,9 +511,19 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
     let devices: ApiDevices = [];
     devicesID.forEach((id) => {
       Object.entries(DevicesList).forEach(
-        ([key, value]: [key: string, value: string]) => {
+        async ([key, value]: [key: string, value: string]) => {
           if (key === id) {
-            devices.push({ id: key, name: value, battery: 'X', process: null });
+            const result = await axios.post(`/api/deviceBattery`, {
+              deviceId: key,
+            });
+            const data: string = result.data;
+            let fData: string = "";
+            if (data.includes(`device ${key}' not found`)) {
+              fData = "X";
+            } else {
+              fData = `${data.trim().split(":")[1]}%`.trim();
+            }
+            devices.push({ id: key, name: value, battery: fData, process: null });
           }
         }
       );
@@ -538,7 +547,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
   function getDevicesBattery() {
     const temp = [...processes];
     temp.map(async (process) => {
-      const result = await axios.post(`${URLcondition}/deviceBattery`, {
+      const result = await axios.post(`/api/deviceBattery`, {
         deviceId: process.device.id,
       });
       const data: string = result.data;
@@ -635,13 +644,13 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
   useInterval(storeInLS, 1000 * 25);
   // get processes from local storage every 25 seconds
   useInterval(getProcessesFromLS, 1000 * 25);
-  // update devices every 25 seconds
-  useInterval(writeDevices, 1000 * 25);
+  // update devices every 50 seconds
+  useInterval(writeDevices, 1000 * 50);
   // read from file
   // useInterval(readDevices, 1000 * 25);
 
   // get device's battery every 2 minutes
-  useInterval(getDevicesBattery, 1000 * 60 * 2);
+  useInterval(getDevicesBattery, 1000 * 60);
 
   if (isLoading)
     return (
@@ -678,7 +687,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
             {router.pathname === "/" ? (
               <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
                 <Box sx={{ margin: "0 auto", overflow: "auto" }}>
-                  <Phones devices={devices} />
+                  {/* <Phones devices={devices} /> */}
                   <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
                     Processes
                   </Typography>

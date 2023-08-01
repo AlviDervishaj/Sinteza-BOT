@@ -21,7 +21,7 @@ import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
 import { Snackbar } from "../Snackbar";
 import { start_bot } from "../../../utils/api-client";
-import { BotFormData, URLcondition } from "../../../utils";
+import { BotFormData } from "../../../utils";
 type Props = {
   removeProcessFromPool: (process: Process) => void;
   processes: Process[];
@@ -74,7 +74,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   const handleDevicePreview = async (event: any, process: Process) => {
     event.preventDefault();
     setIsLoading(true);
-    const res = await axios.post(`${URLcondition}/previewDevice`, {
+    const res = await axios.post(`/api/previewDevice`, {
       deviceId: process.device.id,
     });
     if (res.status === 200) {

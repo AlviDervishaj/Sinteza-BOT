@@ -44,7 +44,7 @@ import {
 } from "../utils/Types";
 import { start_bot, start_bot_checks } from "../utils/api-client";
 import axios from "axios";
-import { URLcondition } from "../utils";
+import {  } from "../utils";
 
 type Props = {
   setData: (data: string) => void;
@@ -179,7 +179,7 @@ export const BotForm: FC<Props> = ({
   };
 
   const getBatteryPercentage = async (device: string) => {
-    const result = await axios.post(`${URLcondition}/deviceBattery`, {
+    const result = await axios.post(`/api/deviceBattery`, {
       deviceId: device,
     });
     const data = result.data;

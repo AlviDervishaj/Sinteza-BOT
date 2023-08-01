@@ -40,6 +40,7 @@ import {
   Jobs,
   SessionConfigSkeleton,
   SessionProfileSkeleton,
+  ApiDevices,
 } from "../utils/Types";
 import { start_bot, start_bot_checks } from "../utils/api-client";
 import axios from "axios";
@@ -49,9 +50,15 @@ type Props = {
   setData: (data: string) => void;
   logData: (data: string) => void;
   getDevices: () => void;
-  devices: { id: string; name: string }[];
+  devices: ApiDevices;
   processes: Process[];
   addToPool: (process: Process) => void;
+  updateDevices: (device: {
+    id: string;
+    name: string;
+    battery: string;
+    process: Process | null;
+  }) => Promise<void>;
   killBot: (event: any, process: Process) => void;
   updateProcessResult: (process: Process, result: string) => void;
 };
@@ -63,6 +70,7 @@ dayjs.extend(Calendar);
 export const BotForm: FC<Props> = ({
   getDevices,
   logData,
+  updateDevices,
   devices,
   processes,
   addToPool,
@@ -94,7 +102,7 @@ export const BotForm: FC<Props> = ({
   const [isHashtagChecked, setIsHashtagChecked] = useState<boolean>(false);
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
-    device: { id: "", name: "" },
+    device: { id: "", name: "", battery: "" },
     password: "",
     jobs: ['follow'],
     config_name: 'config.yml',
@@ -118,7 +126,7 @@ export const BotForm: FC<Props> = ({
     if (!formData.username || formData.username.trim() === "") {
       return notify("Please enter a username.", "error");
     }
-    if (!formData.device.id || formData.device.name.trim() === "") {
+    if (!formData.device.id || formData.device.id.trim() === "") {
       return notify("Please select a device.", "error");
     }
     if (!formData.password || formData.password.trim() === "") {
@@ -164,7 +172,7 @@ export const BotForm: FC<Props> = ({
   };
   const startBotChecks = async () => {
     // start process
-    start_bot_checks({...formData, jobs: checkOptions()}, (output: string) => {
+    start_bot_checks({ ...formData, jobs: checkOptions() }, (output: string) => {
       logData(output);
     });
     setAlreadyCalled(false);
@@ -196,7 +204,7 @@ export const BotForm: FC<Props> = ({
   const checkIfDeviceIsBeingUsed = () => {
     const p = processes.filter(
       (p) =>
-        p.device.id === formData.device.id &&
+        p.device === formData.device &&
         (p.status === "RUNNING" || p.status === "WAITING")
     );
     if (p.length > 0) {
@@ -263,8 +271,10 @@ export const BotForm: FC<Props> = ({
       0,
       _isScheduled.toString(),
       `${battery}%`,
-      formData.jobs,
+      checkOptions(),
     );
+    const device = { id: formData.device.id, process: p, battery: battery, name: formData.device.name}
+    updateDevices(device);
     setScheduledBots((previous) => [...previous, p])
     addToPool(p);
     setTimeout(() => {
@@ -346,6 +356,8 @@ export const BotForm: FC<Props> = ({
         `${battery}%`,
         checkOptions(),
       );
+      const device = { id: formData.device.id, process: p, battery: battery, name: formData.device.name }
+      updateDevices(device);
       start_bot(formData, (output: string) => {
         updateProcessResult(p, output);
       });
@@ -658,7 +670,7 @@ export const BotForm: FC<Props> = ({
               />
             </Grid>
           </Grid>
-          <Grid container spacing={3} sx={{paddingBottom: '2rem'}}>
+          <Grid container spacing={3} sx={{ paddingBottom: '2rem' }}>
             <Grid item>
               <Tooltip title="Start Bot">
                 <Button

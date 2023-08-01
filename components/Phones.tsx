@@ -1,42 +1,19 @@
 // React
-import { FC, ReactElement, ReactNode, useState } from "react";
+import { FC, useState } from "react";
 
-// Material UI
-import { ChargingStation as ChargingNeededPhone, MobileOff, MobileFriendly } from '@mui/icons-material';
-import { Grid, Button, Box, Modal } from "@mui/material";
-import { DevicesList } from "../utils";
+import { Grid, Button, Modal, Typography, Box } from "@mui/material";
+import { DevicesList, Process } from "../utils";
+import { ApiDevices } from "../utils/Types";
+import { SmartToy } from "@mui/icons-material";
 
 type Props = {
-  devices: { name: string, id: string }[],
+  devices: ApiDevices,
 }
 
-type DialogProps = {
-  open: boolean,
-  handleClose: () => void;
-  children: ReactElement;
-
-}
-
-const Dialog: FC<DialogProps> = ({ open, handleClose, children }) => {
-return (
-  <Modal aria-labelledby="Phone pop-up" aria-describedby="Preview Phone status"
-    keepMounted
-    open={open}
-    onClose={handleClose}>
-    {children}
-  </Modal>
-)
-
-}
 
 export const Phones: FC<Props> = ({ devices }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [selectedDevice, setSelectedDevice] = useState<{ id: string, name: string }>({ id: "", name: "" })
-  const handleOpen = () => {
-    setIsOpen(true);
-    return;
-  }
-
+  const [selectedDevice, setSelectedDevice] = useState<{ id: string, name: string, process: Process | null, battery: string }>({ id: "", name: "", battery: "", process: null })
   const handleClose = () => {
     setIsOpen(false);
     return;
@@ -44,14 +21,26 @@ export const Phones: FC<Props> = ({ devices }) => {
 
   const handleSelection = (id: string) => {
     setIsOpen(true);
-    const d = Object.entries(DevicesList).find(([key, value]: [key: string, value: string]) => key === id);
+    const d = devices.find((device) => device.id === id);
     if (d) {
-      setSelectedDevice({ id: d[0], name: d[1] });
+      setSelectedDevice(d);
     }
     else {
-      setSelectedDevice({ id: '', name: "Device not found !" });
+      setSelectedDevice({ id: '', name: "Device not found !", process: null, battery: "X" });
     }
   }
+
+  const modalStyling = {
+    position: 'absolute' as 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 400,
+    bgcolor: 'background.paper',
+    borderRadius: 4,
+    boxShadow: 24,
+    p: 4,
+  };
 
   return (
     <Box sx={{ flexGrow: 1, padding: '1rem 3rem' }}>
@@ -59,17 +48,37 @@ export const Phones: FC<Props> = ({ devices }) => {
         {
           Object.entries(DevicesList).map(([key, value]: [key: string, value: string]) => {
             if (devices.find(element => element.id === key && element.name === value)) {
-              return <Grid item key={key}><Button onClick={(event) => handleSelection(event.currentTarget.value)} variant="outlined" value={key} color="info" key={`${value} ${key}`}>{value}</Button></Grid>
+              return <Grid item key={key}>
+                <Button onClick={(event) => handleSelection(event.currentTarget.value)} variant="outlined" value={key} color="info" key={`${value} ${key}`}>
+                  {value}
+                </Button>
+              </Grid>
             }
             else {
-              return <Grid item key={key}><Button onClick={(event) => handleSelection(event.currentTarget.value)} value={key} variant="outlined" color="error" key={`${key} ${value}`}>{value}</Button></Grid>
+              return <Grid item key={key}>
+                <Button onClick={(event) => handleSelection(event.currentTarget.value)} value={key} variant="outlined" color="error" key={`${key} ${value}`}>
+                  {value}
+                </Button>
+              </Grid>
             }
           })
         }
       </Grid>
-      <Dialog open={isOpen} handleClose={handleClose}>
-        <h2>{selectedDevice.name}</h2>
-      </Dialog>
+      <Modal
+        aria-labelledby="Phone pop-up"
+        aria-describedby="Preview Phone status"
+        open={isOpen}
+        onClose={handleClose}>
+        <Box sx={modalStyling}>
+          {selectedDevice.name === "Device not found !" ? <Typography>{selectedDevice.name}</Typography> : <>
+            <Typography sx={{fontSize: 30, paddingBottom: 3}}>{selectedDevice.name}</Typography>
+            <Typography color={selectedDevice.process ? 'black' : 'red'} sx={{fontSize: 20}}>
+              {selectedDevice.process ? selectedDevice.process.username : "No process"}
+            </Typography>
+            <Typography>{selectedDevice.process?.configFile}</Typography>
+          </>}
+        </Box>
+      </Modal>
     </Box>
 
   );

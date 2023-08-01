@@ -60,6 +60,9 @@ import {
   start_bot,
 } from "../utils";
 
+
+import { ApiDevices } from "../utils/Types";
+
 // Dayjs
 import dayjs from "dayjs";
 import RelativeTime from "dayjs/plugin/relativeTime";
@@ -77,7 +80,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
   const router: NextRouter = useRouter();
   const scrollToMe = useRef<HTMLDivElement>(null);
   const [data, setData] = useState<string>("");
-  const [devices, setDevices] = useState<{ id: string; name: string }[]>([]);
+  const [devices, setDevices] = useState<ApiDevices>([]);
   const [processes, setProcesses] = useState<Process[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const lightTheme = createTheme({ palette: { mode: "light" } });
@@ -94,6 +97,22 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
     </>
   );
 
+  const writeDevices = async () => {
+    await fetch('/api/writeDevices', {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(devices),
+    });
+  }
+
+  const readDevices = async () => {
+    await fetch('/api/readDevices');
+  }
+
+
   const notify = (
     message: SnackbarMessage,
     variant: "error" | "info" | "default" | "success"
@@ -102,6 +121,19 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
     return;
   };
 
+  // update devices
+  const updateDevices = useCallback(async (device: { id: string, name: string, battery: string, process: Process | null }) => {
+    setDevices((previous) =>
+      previous.filter((d) => {
+        if (
+          d.id === device.id &&
+          d.name === device.name
+        ) {
+          return device;
+        } else return d;
+      })
+    );
+  }, [])
   const removeSchedule = async (proc: Process) => {
     if (proc.scheduled !== false) {
       const startTime = dayjs(proc.scheduled).valueOf();
@@ -241,7 +273,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
         previous.filter((p) => {
           if (
             p.username === _process.username &&
-            p.device.id === _process.device.id
+            p.device === _process.device
           ) {
             return;
           } else return p;
@@ -255,7 +287,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       previous.filter((p) => {
         if (
           p.username === _process.username &&
-          p.device.id === _process.device.id
+          p.device === _process.device
         ) {
           return _process;
         } else return p;
@@ -312,7 +344,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
     // start bot
     const d: BotFormData = {
       username: process.username,
-      device: process.device,
+      device: { id: process.device.id, name: process.device.name, battery: process.device.battery },
       config_name: process.configFile,
       jobs: process.jobs,
     }
@@ -399,9 +431,9 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
         ) ||
         output.includes(
           "RuntimeError: USB device"
-        ) || output.includes(` ${_process.device.id} is offline`) ||
+        ) || output.includes(` ${_process.device} is offline`) ||
         output.includes(
-          `adbutils.errors.AdbError: device '${_process.device.id}' not found`
+          `adbutils.errors.AdbError: device '${_process.device}' not found`
         )
       ) {
         _process.status = "STOPPED";
@@ -477,12 +509,12 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
         return _t_stripped_temp.replace("device", "");
       });
     // map devices to name. from the json file
-    let devices: { id: string; name: string }[] = [];
+    let devices: ApiDevices = [];
     devicesID.forEach((id) => {
       Object.entries(DevicesList).forEach(
         ([key, value]: [key: string, value: string]) => {
           if (key === id) {
-            devices.push({ id: key, name: value });
+            devices.push({ id: key, name: value, battery: 'X', process: null });
           }
         }
       );
@@ -511,12 +543,19 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       });
       const data: string = result.data;
       let fData: string = "";
-      if (data.includes(`device '${process.device.id}' not found`)) {
+      if (data.includes(`device '${process.device}' not found`)) {
         fData = "X";
       } else {
         fData = `${data.trim().split(":")[1]}%`.trim();
       }
       process.battery = fData;
+      const device = devices.find((device) => device.id === process.device.id);
+      if (device) {
+        // update devices battery
+        device.battery = fData;
+        updateDevices(device);
+      }
+      // else do nothing.
       updateProcessesPool(process);
     });
   }
@@ -527,10 +566,16 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
       "processes",
       JSON.stringify(processes.length > 0 ? processes : [])
     );
+
+    // store devices too
+    localStorage.setItem(
+      "devices",
+      JSON.stringify(devices.length > 0 ? devices : [])
+    )
   }
 
   // get processes from local storage
-  function getFromLS() {
+  function getProcessesFromLS() {
     const p: ProcessSkeleton[] | [] = localStorage.getItem("processes")
       ? JSON.parse(localStorage.getItem("processes") as string)
       : [];
@@ -539,9 +584,17 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
     return p;
   }
 
+  function getDevicesFromLS() {
+    const d: ApiDevices = localStorage.getItem("devices")
+      ? JSON.parse(localStorage.getItem("devices") as string)
+      : [];
+    return d;
+  }
+
   // get processes from local storage
   useEffectOnce(() => {
-    const p: ProcessSkeleton[] | [] = getFromLS();
+    const p: ProcessSkeleton[] | [] = getProcessesFromLS();
+    const d: ApiDevices = getDevicesFromLS();
     const proc =
       p.length > 0
         ? p.map((_p) => {
@@ -566,6 +619,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
         })
         : [];
     setProcesses(proc);
+    setDevices(d);
   });
 
   // give app time to load
@@ -580,7 +634,11 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
   // save processes in local storage every 25 seconds
   useInterval(storeInLS, 1000 * 25);
   // get processes from local storage every 25 seconds
-  useInterval(getFromLS, 1000 * 25);
+  useInterval(getProcessesFromLS, 1000 * 25);
+  // update devices every 25 seconds
+  useInterval(writeDevices, 1000 * 25);
+  // read from file
+  // useInterval(readDevices, 1000 * 25);
 
   // get device's battery every 2 minutes
   useInterval(getDevicesBattery, 1000 * 60 * 2);
@@ -612,6 +670,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
                 devices={devices}
                 killBot={killBot}
                 addToPool={addToPool}
+                updateDevices={updateDevices}
                 updateProcessResult={updateProcessResult}
                 processes={processes}
               />
@@ -619,7 +678,7 @@ export default function Sinteza({ Component, pageProps }: AppProps): ReactJSXEle
             {router.pathname === "/" ? (
               <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
                 <Box sx={{ margin: "0 auto", overflow: "auto" }}>
-                  <Phones devices={devices}/>
+                  <Phones devices={devices} />
                   <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
                     Processes
                   </Typography>

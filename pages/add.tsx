@@ -6,6 +6,7 @@ import { BotForm } from "../components/BotForm";
 import { NextPage } from "next";
 import { Process } from "../utils/Process";
 import { BotFormData } from "../utils";
+import { ApiDevices } from "../utils/Types";
 
 type Props = {
   setError: (error: string) => void;
@@ -14,9 +15,15 @@ type Props = {
   getDevices: () => void;
   error: string;
   logData: (data: string) => void;
-  devices: { id: string; name: string }[];
+  devices: ApiDevices;
   processes: Process[];
   setProcesses: Dispatch<SetStateAction<Process[]>>;
+  updateDevices: (device: {
+    id: string;
+    name: string;
+    battery: string;
+    process: Process | null;
+  }) => Promise<void>;
   addToPool: (process: Process) => void;
   killBot: (process: Process) => void;
   updateProcessResult: (process: Process, output: string) => void;
@@ -33,6 +40,7 @@ const AddBot: NextPage<Props> = ({
   addToPool,
   updateProcessResult,
   killBot,
+  updateDevices,
   getDevices,
   processes,
   devices,
@@ -79,6 +87,7 @@ const AddBot: NextPage<Props> = ({
         logData={logData}
         updateProcessResult={updateProcessResult}
         processes={processes}
+        updateDevices={updateDevices}
         devices={devices}
         killBot={killBot}
         addToPool={addToPool}

@@ -1,3 +1,5 @@
+import { Process } from "./Process";
+
 export type Response = {
   time: string,
   date: string,
@@ -8,9 +10,16 @@ export type Response = {
 
 export type Jobs = ['follow'] | ['unfollow'] | ['hashtags', 'follow'] | ['hashtags', 'unfollow']
 
+export type ApiDevices = {
+  id: string,
+  name: string,
+  process: null | Process,
+  battery: 'X' | string;
+}[];
+
 export type BotFormData = {
   username: string;
-  device: { id: string, name: string };
+  device: {id: string, battery: string, name: string};
   password?: string;
   jobs: Jobs,
   config_name?: ConfigNames,
@@ -325,17 +334,17 @@ export const SessionConfigSkeleton: SessionConfig = {
 }
 
 export type SessionProfile = {
-    posts: number,
-    followers: number,
-    following: number
+  posts: number,
+  followers: number,
+  following: number
 }
 
-export type ConfigNames =  'config.yml' | 'config2.yml' | 'config3.yml';
+export type ConfigNames = 'config.yml' | 'config2.yml' | 'config3.yml';
 
 export const SessionProfileSkeleton: SessionProfile = {
-    posts: 0,
-    followers: 0,
-    following: 0
+  posts: 0,
+  followers: 0,
+  following: 0
 }
 
 export type Session = {

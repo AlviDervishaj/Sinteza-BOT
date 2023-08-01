@@ -13,7 +13,7 @@ import {
 let id = 0;
 
 export type ProcessSkeleton = {
-  _device: { id: string, name: string },
+  _device: { id: string, name: string, process: { username: string, configFile: string } | null, battery: string, },
   _scheduled: string | false
   _battery: string,
   _result: string,
@@ -36,7 +36,7 @@ export type ProcessSkeleton = {
 
 }
 export class Process {
-  private _device: { id: string, name: string };
+  private _device: { id: string, name: string, process: { username: string, configFile: string } | null, battery: string };
   private _scheduled: false | string;
   private _battery: string;
   private _result: string;
@@ -57,7 +57,7 @@ export class Process {
   private _startTime: number;
 
   constructor(
-    device: { id: string, name: string },
+    device: { id: string, name: string, battery: string },
     username: string,
     membership: "PREMIUM" | "FREE",
     status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED",
@@ -78,7 +78,7 @@ export class Process {
       username,
       membership
     }
-    this._device = device;
+    this._device = { id: device.id, name: device.name, battery: device.battery, process: { username: this.username, configFile: this.configFile } };
     this._status = status;
     this._result = result;
     this._total = total;
@@ -99,8 +99,9 @@ export class Process {
   get device() {
     return this._device;
   }
-  set device(device: { id: string, name: string }) {
-    this._device = device;
+  set device(device: { id: string, name: string, battery: string }) {
+
+    this._device = { id: device.id, name: device.name, battery: device.battery, process: { username: this.username, configFile: this.configFile } };
     return;
   }
 
@@ -113,11 +114,11 @@ export class Process {
     return;
   }
 
-  get startTime(){
+  get startTime() {
     return this._startTime;
   }
 
-  set startTime(_startTime: number){
+  set startTime(_startTime: number) {
     this._startTime = _startTime ? _startTime : Date.now();
     return;
   }

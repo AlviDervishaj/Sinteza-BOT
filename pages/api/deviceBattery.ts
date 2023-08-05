@@ -15,6 +15,4 @@ export default async function POST(req: NextApiRequest, res: NextApiResponse) {
         const cmd: ChildProcessWithoutNullStreams = spawn(command, { shell: true });
         transferChildProcessOutput(cmd, res);
     }
-
-
 }

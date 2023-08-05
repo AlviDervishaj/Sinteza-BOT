@@ -1,16 +1,10 @@
 // NextJs
+import { Box, Typography } from "@mui/material";
 import Head from "next/head";
-
-
-// Props
-type Props = {
-  devices: string[];
-  device: string;
-  getDevices: () => void;
-};
-
+import { ProcessesTable, ShowProcesses } from "../components";
 // Home 
-export default function Home({}: Props) {
+export default function Home() {
+
   return (
     <>
       <Head>
@@ -48,6 +42,15 @@ export default function Home({}: Props) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Sinteza</title>
       </Head>
+      <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
+        <Box sx={{ margin: "0 auto", overflow: "auto" }}>
+          <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
+            Processes
+          </Typography>
+          <ProcessesTable />
+          <ShowProcesses />
+        </Box>
+      </Box>
     </>
   );
 }

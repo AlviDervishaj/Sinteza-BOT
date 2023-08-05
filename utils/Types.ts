@@ -1,3 +1,4 @@
+import { Device } from "./Devices";
 import { Process } from "./Process";
 
 export type Response = {
@@ -8,21 +9,57 @@ export type Response = {
   processId: string,
 }
 
+
+// Event Server Types
+export type EventTypes = "get-processes" |
+  "get-config" |
+  "get-session" |
+  "create-devices" |
+  "terminate-process" |
+  "send-status-to-telegram" |
+  "preview-device" |
+  "get-process" |
+  "create-process" |
+  "update-process" |
+  "update-processes" |
+  "stop-process" |
+  "create-device" |
+  "get-device" |
+  "update-device" |
+  "get-devices" |
+  "remove-device" |
+  "delete-older-logs" |
+  "read-config" |
+  "get-pid" |
+  "start-bot" |
+  "start-bot-checks" |
+  "remove-process";
+export type EmitTypes = `${EventTypes}-message`;
+
 export type Jobs = ['follow'] | ['unfollow'] | ['hashtags', 'follow'] | ['hashtags', 'unfollow']
 
-export type ApiDevices = {
-  id: string,
-  name: string,
-  process: null | Process,
+export type DeviceType = {
+  id: string;
+  name: string;
+  process: null | Process;
   battery: 'X' | string;
-}[];
+};
 
+export type DeviceSkeleton = {
+  _id: string,
+  _name: string,
+  _process: {
+    username: string,
+    configFile: string
+  } | null,
+  _battery: string
+};
 export type BotFormData = {
   username: string;
-  device: {id: string, battery: string, name: string};
+  device: Device;
   password?: string;
-  jobs: Jobs,
-  config_name?: ConfigNames,
+  jobs: Jobs;
+  config_name?: ConfigNames;
   "speed-multiplier"?: number;
   "truncate-sources"?: string,
   "blogger-followers"?: string[],

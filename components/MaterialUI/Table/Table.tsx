@@ -1,4 +1,5 @@
-import { FC, useState, useMemo, memo } from "react";
+"use client";
+import { useState, useEffect, useMemo, memo } from "react";
 // uuid
 import { v5 as uuidv5 } from "uuid";
 import {
@@ -10,11 +11,12 @@ import {
   GridToolbarQuickFilter,
   GridToolbarFilterButton,
 } from "@mui/x-data-grid";
-import { Process } from "../../../utils/Process";
 import { Box } from "@mui/material";
 
-// Hooks
-import { useEffectOnce } from "usehooks-ts";
+import { io, Socket } from "socket.io-client";
+import { useEffectOnce, useInterval } from "usehooks-ts";
+import { Process, ProcessSkeleton } from "../../../utils";
+import { EmitTypes, EventTypes } from "../../../utils/Types";
 
 // DayJs
 import dayjs from "dayjs";
@@ -26,11 +28,7 @@ dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
 dayjs.extend(Calendar);
 
-type Props = {
-  processes: Process[];
-  getSession: (process: Process) => void;
-  stopProcessByUsername: (username: string) => void;
-};
+const socket: Socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
 
 const GridToolbar = () => {
   return (
@@ -62,12 +60,63 @@ const GridToolbar = () => {
   );
 };
 
-export const ProcessesTable = memo<Props>(function Table({
-  processes,
-  getSession,
-}) {
+export const ProcessesTable = memo(function Table() {
   const [loading, setLoading] = useState<boolean>(true);
+  const [processes, setProcesses] = useState<Process[]>([]);
 
+  useEffectOnce(() => {
+    socket.emit<EventTypes>("get-processes");
+  })
+
+  // update table every  1 minute
+  useInterval(() => {
+    socket.emit<EventTypes>("get-processes");
+  }, 1000 * 60);
+
+  socket.on("connect", () => {
+    console.log("Connected Table To Socket!");
+  });
+
+  // listen for event to get processes
+  socket.on<EmitTypes>("get-processes-message", (response: ProcessSkeleton[]) => {
+    setLoading(false);
+    console.log({ response });
+    // convert to Process class
+    const proc =
+      response.length > 0
+        ? response.map((_p) => {
+          return new Process(
+            _p._device,
+            _p._user.username,
+            _p._user.membership,
+            _p._status,
+            _p._result,
+            _p._total,
+            _p._following,
+            _p._followers,
+            _p._session,
+            _p._config,
+            _p._profile,
+            _p._total_crashes,
+            _p._scheduled,
+            _p._battery,
+            _p._jobs,
+          );
+        })
+        : [];
+    setProcesses(proc);
+  });
+
+  // close connection on reload / page leave
+  useEffect(() => {
+    socket.connect()
+    return () => {
+      socket.emit("close");
+      socket.disconnect();
+    }
+  }, [])
+
+  // Table Columns
   const ConfigCols: GridColDef[] = [
     {
       field: "overview-username",
@@ -216,11 +265,7 @@ export const ProcessesTable = memo<Props>(function Table({
     },
   ];
 
-  useEffectOnce(() => {
-    processes.forEach((process) => getSession(process));
-    setTimeout(() => setLoading(false), 1000);
-  });
-
+  // Table Rows
   const ConfigRows = useMemo(() => {
     return processes.map((process) => {
       const session = process.session;
@@ -310,6 +355,7 @@ export const ProcessesTable = memo<Props>(function Table({
       ],
     },
   ];
+
   return (
     <Box
       sx={{

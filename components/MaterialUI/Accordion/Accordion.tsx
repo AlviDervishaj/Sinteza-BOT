@@ -20,22 +20,13 @@ import axios from "axios";
 import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
 import { Snackbar } from "../Snackbar";
-import { start_bot } from "../../../utils/api-client";
-import { BotFormData, URLcondition } from "../../../utils";
+import { URLcondition } from "../../../utils";
 type Props = {
-  removeProcessFromPool: (process: Process) => void;
   processes: Process[];
-  updateProcessResult: (process: Process, result: string) => void;
-  killBot: (process: Process) => void;
-  removeSchedule: (process: Process) => void;
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
   processes,
-  removeProcessFromPool,
-  updateProcessResult,
-  killBot,
-  removeSchedule,
 }) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -110,30 +101,12 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
     }
   };
 
-  const startBotAgain = (event: any, process: Process) => {
-    event.preventDefault();
-    setIsStarting(true);
-    process.scheduled = false;
-    process.total_crashes = 0;
-    process.startTime = Date.now();
-    const data: BotFormData = {
-      username: process.username,
-      password: "",
-      device: process.device,
-      jobs: process.jobs,
-      config_name: process.configFile,
-    };
-    start_bot(data, (output: string) => {
-      process.status = "RUNNING";
-      setIsStarting(false);
-      updateProcessResult(process, output);
-    });
-  };
-
   const handleChange =
     (tab: string) => (event: SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? tab : false);
     };
+
+  console.log({ acc: processes });
 
   return (
     <Box sx={{ width: 9 / 10, margin: "0 auto" }}>
@@ -179,19 +152,18 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                 <>
                   <Tooltip title="Start bot again." arrow>
                     <span>
-                    <Button
-                      variant="outlined"
-                      color="info"
-                      key={process.username}
-                      disabled={isStarting}
-                      onClick={(event) => startBotAgain(event, process)}
-                    >
-                      { isStarting ? (
-                        <CircularProgress color="inherit" size={25} />
-                      ) : (
-                        "Start Bot"
-                      )}
-                    </Button>
+                      <Button
+                        variant="outlined"
+                        color="info"
+                        key={process.username}
+                        disabled={isStarting}
+                      >
+                        {isStarting ? (
+                          <CircularProgress color="inherit" size={25} />
+                        ) : (
+                          "Start Bot"
+                        )}
+                      </Button>
                     </span>
                   </Tooltip>
                   {/* <ChangeBotConfig process={process} /> */}
@@ -199,7 +171,6 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                     <Button
                       variant="outlined"
                       color="error"
-                      onClick={() => removeProcessFromPool(process)}
                     >
                       Remove
                     </Button>
@@ -210,7 +181,6 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                   <Button
                     variant="outlined"
                     color="error"
-                    onClick={(event) => process.scheduled ? removeSchedule(process) : killBot(process)}
                   >
                     {process.scheduled ? "Remove Schedule" : "Stop"}
                   </Button>

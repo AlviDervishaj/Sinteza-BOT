@@ -1,5 +1,5 @@
 // React
-import { FC, useState } from "react";
+import { FC, useCallback, useEffect, useState, ReactNode } from "react";
 
 // Notistack
 import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
@@ -30,67 +30,30 @@ import Duration from "dayjs/plugin/duration";
 import Calendar from "dayjs/plugin/calendar";
 
 // Hooks
-import { useEffectOnce } from "usehooks-ts";
+import { useInterval, useTimeout } from "usehooks-ts";
 
 // Utils
 import { Process } from "../utils/Process";
+import { Device } from "../utils/Devices";
 import {
   BotFormData,
-  ConfigRows,
   Jobs,
-  SessionConfigSkeleton,
-  SessionProfileSkeleton,
-  ApiDevices,
+  EventTypes,
+  EmitTypes,
+  DeviceSkeleton
 } from "../utils/Types";
-import { start_bot, start_bot_checks } from "../utils/api-client";
-import axios from "axios";
-import { URLcondition } from "../utils";
-
-type Props = {
-  setData: (data: string) => void;
-  logData: (data: string) => void;
-  getDevices: () => void;
-  devices: ApiDevices;
-  processes: Process[];
-  addToPool: (process: Process) => void;
-  updateDevices: (device: {
-    id: string;
-    name: string;
-    battery: string;
-    process: Process | null;
-  }) => Promise<void>;
-  killBot: (event: any, process: Process) => void;
-  updateProcessResult: (process: Process, result: string) => void;
-};
+import { io, Socket } from "socket.io-client";
+import { Output } from "./Output";
 
 dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
 dayjs.extend(Calendar);
 
-export const BotForm: FC<Props> = ({
-  getDevices,
-  logData,
-  updateDevices,
-  devices,
-  processes,
-  addToPool,
-  updateProcessResult,
-}) => {
-  const notifyActions = (id: SnackbarKey) => (
-    <>
-      <Button variant="text" color="inherit" onClick={() => closeSnackbar(id)}>
-        <Close color={"inherit"} />
-      </Button>
-    </>
-  );
-
-  const notify = (
-    message: SnackbarMessage,
-    variant: "error" | "info" | "default" | "success"
-  ) => {
-    enqueueSnackbar(message, { variant, action: notifyActions });
-    return;
-  };
+const socket: Socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
+export const BotForm: FC = () => {
+  // input changes trigger socket connection 
+  const [processes, setProcesses] = useState<Process[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
   const [isScheduled, setIsScheduled] = useState<boolean>(false);
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
@@ -98,11 +61,11 @@ export const BotForm: FC<Props> = ({
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const [isUnfollowedChecked, setIsUnfollowedChecked] =
     useState<boolean>(false);
-  const [scheduledBots, setScheduledBots] = useState<Process[]>([]);
   const [isHashtagChecked, setIsHashtagChecked] = useState<boolean>(false);
+  const [data, setData] = useState<string>("");
   const [formData, setFormData] = useState<BotFormData>({
     username: "",
-    device: { id: "", name: "", battery: "" },
+    device: new Device("", "", "", null),
     password: "",
     jobs: ['follow'],
     config_name: 'config.yml',
@@ -115,14 +78,44 @@ export const BotForm: FC<Props> = ({
     "working-hours": ["8.30-16.40", "18.15-22.46"],
   });
 
+  const notifyActions = useCallback((id: SnackbarKey): ReactNode => (
+    <>
+      <Button variant="text" color="inherit" onClick={() => closeSnackbar(id)}>
+        <Close color={"inherit"} />
+      </Button>
+    </>
+  ), [closeSnackbar]);
+
+  const refreshDevices = (): void => {
+    socket.emit<EventTypes>("get-devices");
+    return;
+  }
+
+  const notify = useCallback((
+    message: SnackbarMessage,
+    variant: "error" | "info" | "default" | "success"
+  ): void => {
+    enqueueSnackbar(message, { variant, action: notifyActions });
+    return;
+  }, [enqueueSnackbar, notifyActions])
+
+  // check for schduled time
   const checkScheduledTime = (): dayjs.Dayjs | false => {
     if (scheduledTime === null) return false;
     return scheduledTime;
   };
-  useEffectOnce(() => {
-    getDevices();
-  });
-  const checkFormData = () => {
+
+  const logData = useCallback((data: string): void => {
+    setData((prev) => {
+      if (prev.includes(data)) return prev;
+      prev += `${data}\n`;
+      return prev
+    });
+    return;
+  }, []);
+
+  // check form data
+  const checkFormData = (): void | true => {
     if (!formData.username || formData.username.trim() === "") {
       return notify("Please enter a username.", "error");
     }
@@ -145,19 +138,19 @@ export const BotForm: FC<Props> = ({
       !formData["blogger-followers"] ||
       formData["blogger-followers"].length === 0
     ) {
-      logData("[INFO] Blogger Followers: Commented");
+      logData("[INFO] Blogger Followers: To be commented");
     }
     if (
       !formData["hashtag-likers-top"] ||
       formData["hashtag-likers-top"].length === 0
     ) {
-      logData("[INFO] Hashtag Likes Top: Commented");
+      logData("[INFO] Hashtag Likes Top: To be commented");
     }
     if (
       !formData["unfollow-non-followers"] ||
       formData["unfollow-non-followers"].trim() === ""
     ) {
-      logData("[INFO] Unfollow Non Followers: Commented");
+      logData("[INFO] Unfollow Non Followers: To be commented");
     }
     if (
       !formData["unfollow-skip-limit"] ||
@@ -170,54 +163,34 @@ export const BotForm: FC<Props> = ({
     }
     return true;
   };
-  const startBotChecks = async () => {
-    // start process
-    start_bot_checks({ ...formData, jobs: checkOptions() }, (output: string) => {
-      logData(output);
-    });
-    setAlreadyCalled(false);
-  };
 
-  const getBatteryPercentage = async (device: string) => {
-    const result = await axios.post(`${URLcondition}/deviceBattery`, {
-      deviceId: device,
-    });
-    const data = result.data;
-    const fBattery: string = data.trim().split(":")[1];
-    return fBattery.trim();
-  };
-
+  // reactive schedule change
   const handleScheduledChange = (
     event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  ): void => {
     setIsScheduled(event.target.checked);
+    return;
   };
 
-  const handleHashtagChecked = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // handle job options
+  const handleHashtagChecked = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setIsHashtagChecked(event.target.checked);
+    return;
   };
+  // handle job options
   const handleUnfollowedChecked = (
     event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  ): void => {
     setIsUnfollowedChecked(event.target.checked);
-  };
-  const checkIfDeviceIsBeingUsed = () => {
-    const p = processes.filter(
-      (p) =>
-        p.device === formData.device &&
-        (p.status === "RUNNING" || p.status === "WAITING")
-    );
-    if (p.length > 0) {
-      notify("Device is already in use !", "error");
-      return true;
-    } else return false;
+    return;
   };
 
-  const handleSchedule = (_isScheduled: dayjs.Dayjs | false) => {
+  // hande schedule
+  const handleSchedule = (_isScheduled: dayjs.Dayjs | false): number | false => {
     if (_isScheduled !== false) {
-      const startTime = _isScheduled.valueOf();
-      const timeNow = dayjs().valueOf();
-      const millis = startTime - timeNow;
+      const startTime: number = _isScheduled.valueOf();
+      const timeNow: number = dayjs().valueOf();
+      const millis: number = startTime - timeNow;
       if (millis < 120000) {
         notify("Starting bot now ...", "info");
         return false;
@@ -228,7 +201,8 @@ export const BotForm: FC<Props> = ({
     return false;
   };
 
-  const checkOptions = (): Jobs => {
+  // check jobs 
+  const checkJobs = (): Jobs => {
     // check if hashtags and unfollowed are checked
     if (isHashtagChecked) {
       if (isUnfollowedChecked) {
@@ -248,63 +222,59 @@ export const BotForm: FC<Props> = ({
     }
   };
 
+  useTimeout(() => {
+    socket.on<EmitTypes>("start-bot-checks-message", (data: string): void => {
+      if (data.trim() !== "") {
+        notify(data, "error");
+        return;
+      }
+    })
+    socket.on<EmitTypes>("start-bot-message", (data: string): void => {
+      console.log({ botMessage: data });
+    })
 
-  const scheduleBot = async (result: number, _isScheduled: Dayjs) => {
+    socket.on<EmitTypes>("create-process-message", (data: string | Process): void => {
+      if (typeof data === "string") {
+        notify(data.replace("[ERROR]", ""), "error");
+        return;
+      }
+      else {
+        console.log({ data });
+        return;
+      }
+    });
+
+  }, 300);
+
+  // schedule Bot start
+  const scheduleBot = async (result: number, _isScheduled: Dayjs): Promise<void> => {
     notify(
       `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
       "info"
     );
-    const battery = await getBatteryPercentage(formData.device.id);
     // call api to get device battery
-    const p = new Process(
-      formData.device,
-      formData.username,
+    const data: {
+      formData: BotFormData,
+      membership: "FREE" | "PREMIUM",
+      jobs: Jobs,
+      scheduled: string | false,
+      startTime: number,
+      startsAt: number,
+      status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
+    } = {
+      formData: formData,
       membership,
-      "WAITING",
-      "[INFO] Waiting for scheduled time...\n",
-      0,
-      0,
-      0,
-      ConfigRows,
-      SessionConfigSkeleton,
-      SessionProfileSkeleton,
-      0,
-      _isScheduled.toString(),
-      `${battery}%`,
-      checkOptions(),
-    );
-    const device = { id: formData.device.id, process: p, battery: battery, name: formData.device.name}
-    updateDevices(device);
-    setScheduledBots((previous) => [...previous, p])
-    addToPool(p);
-    setTimeout(() => {
-      if (
-        processes.filter(
-          (p) =>
-            p.username === formData.username &&
-            (p.status === "RUNNING" || p.status === "WAITING")
-        ).length > 0
-      ) {
-        notify("Bot is already running !", "error");
-        return;
-      }
-      if (scheduledBots.filter((p) => p.username === formData.username).length > 0) {
-        notify("Bot already scheduled !", "error");
-        return;
-      }
-      p.status = "RUNNING";
-      p.scheduled = false;
-      p.startTime = Date.now();
-      start_bot(formData, (output: string) => {
-        updateProcessResult(p, output);
-      });
-      notify("Bot started !", "success");
-      setAlreadyCalled(false);
-    }, result);
+      jobs: checkJobs(),
+      scheduled: _isScheduled.toString(),
+      startsAt: result,
+      status: "WAITING",
+      startTime: Date.now()
+    };
+    socket.emit<EventTypes>("create-process", data);
     return;
   }
 
-  const checkIfUsernameIsRunning = () => {
+  const checkIfUsernameIsRunning = (): boolean => {
     if (
       processes.filter(
         (p) =>
@@ -317,55 +287,112 @@ export const BotForm: FC<Props> = ({
     }
     else return false;
   }
-
-  const callApi = async () => {
+  const callApi = async (): Promise<void> => {
     const _isScheduled = checkScheduledTime();
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;
     setAlreadyCalled(true);
     logData("[INFO] Checking if device is available...");
-    if (checkIfDeviceIsBeingUsed()) {
-      return;
-    }
+    // get device
+    const device = formData.device;
     if (checkIfUsernameIsRunning()) {
       return;
     }
+    if (device.process) {
+      notify("Device is in use.", "error");
+      return;
+    }
     logData("[INFO] Starting bot checks... ");
-    await startBotChecks();
+    // start bot
     // cron job
     const result = handleSchedule(_isScheduled);
     if (result !== false && _isScheduled !== false) {
       scheduleBot(result, _isScheduled);
     } else {
-      logData("[INFO] Starting bot...");
-      const battery = await getBatteryPercentage(formData.device.id);
-      const p = new Process(
-        formData.device,
-        formData.username,
+      const data: {
+        formData: BotFormData,
+        membership: "FREE" | "PREMIUM",
+        jobs: Jobs,
+        scheduled: string | false,
+        startTime: number,
+        status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
+      } = {
+        formData,
         membership,
-        "RUNNING",
-        "",
-        0,
-        0,
-        0,
-        ConfigRows,
-        SessionConfigSkeleton,
-        SessionProfileSkeleton,
-        0,
-        false,
-        `${battery}%`,
-        checkOptions(),
-      );
-      const device = { id: formData.device.id, process: p, battery: battery, name: formData.device.name }
-      updateDevices(device);
-      start_bot(formData, (output: string) => {
-        updateProcessResult(p, output);
-      });
-      notify("Bot started !", "success");
-      addToPool(p);
+        jobs: checkJobs(),
+        scheduled: false,
+        status: "RUNNING",
+        startTime: Date.now()
+      };
+      createProcess(data);
       setAlreadyCalled(false);
     }
   };
+  socket.on<EmitTypes>("get-processes-message", (result: string | Process[]): void => {
+    if (typeof result === "string") {
+      console.log(result);
+      return;
+    }
+    else {
+      setProcesses(result);
+      return;
+    }
+  });
+
+  function createProcess(data: {
+    formData: BotFormData,
+    membership: "FREE" | "PREMIUM",
+    jobs: Jobs,
+    scheduled: string | false,
+    startTime: number,
+    status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
+  }) {
+    socket.emit<EventTypes>("create-process", data);
+  }
+
+  socket.on<EmitTypes>("get-devices-message", (data: DeviceSkeleton[]): void => {
+    logData(`[INFO] ${data.length} devices connected.`)
+    // convert to Device class
+    if (data.length <= 0) { setDevices([]); return; }
+    let temp: Device[] = [];
+    data.forEach((_device: DeviceSkeleton) => {
+      if (temp.find((_d: Device) => _d.id === _device._id)) return;
+      else {
+        temp.push(new Device(_device._id, _device._name, _device._battery, _device._process));
+      }
+    });
+    setDevices(temp);
+    return;
+  });
+  socket.once<EmitTypes>("create-process-message", (data: string | Process[]) => {
+    if (typeof data === "string") {
+      console.log({ createProcessMessage: data });
+      return;
+    }
+    else {
+      notify("Bot started !", "success");
+    }
+  });
+
+  socket.on("connect", () => {
+    console.log("Connected from bot!");
+  });
+
+  useEffect(() => {
+    socket.connect();
+    return () => {
+      socket.emit("close");
+      socket.disconnect();
+    }
+  }, [])
+
+  useInterval(() => {
+    socket.emit<EventTypes>("get-processes");
+  }, 1000 * 3)
+  useInterval(() => {
+    socket.emit<EventTypes>("get-devices");
+  }, 1000 * 2)
+
   return (
     <>
       <Container maxWidth="sm">
@@ -405,17 +432,19 @@ export const BotForm: FC<Props> = ({
                   required
                   value={formData.device.id}
                   onChange={(event) =>
-                    setFormData((previousData: BotFormData) => ({
-                      // find the device by id
-                      ...previousData,
-                      device: devices.filter(
-                        (device) => device.id === event.target.value
-                      )[0],
-                    }))
+                    setFormData((previousData: BotFormData) => {
+                      return ({
+                        // find the device by id
+                        ...previousData,
+                        device: devices.filter(
+                          (device) => device.id === event.target.value
+                        )[0],
+                      });
+                    })
                   }
                 >
                   {devices.length > 0 ? (
-                    devices.sort((a, b) => {
+                    devices.sort((a: Device, b: Device) => {
                       if (a.name > b.name) return 1;
                       else if (a.name === b.name) return 0;
                       else return -1;
@@ -425,7 +454,9 @@ export const BotForm: FC<Props> = ({
                       </MenuItem>
                     ))
                   ) : (
-                    <MenuItem value={""}>No devices found</MenuItem>
+                    <MenuItem value={""}>
+                      Getting devices ...
+                    </MenuItem>
                   )}
                 </Select>
               </FormControl>
@@ -684,7 +715,7 @@ export const BotForm: FC<Props> = ({
             </Grid>
             <Grid item>
               <Tooltip title="Refresh Devices">
-                <Button variant="contained" color="info" onClick={getDevices}>
+                <Button variant="contained" color="info" onClick={() => refreshDevices()}>
                   Refresh Devices
                 </Button>
               </Tooltip>
@@ -692,6 +723,7 @@ export const BotForm: FC<Props> = ({
           </Grid>
         </Grid>
       </Container>
+      <Output data={data} />
     </>
   );
 };

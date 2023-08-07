@@ -13,6 +13,8 @@ export type Response = {
 // Event Server Types
 export type EventTypes = "get-processes" |
   "get-config" |
+  "start-process-again" |
+  "create-processes" |
   "get-session" |
   "create-devices" |
   "terminate-process" |
@@ -60,12 +62,12 @@ export type BotFormData = {
   password?: string;
   jobs: Jobs;
   config_name?: ConfigNames;
-  "speed-multiplier"?: number;
+  "speed-multiplier"?: number | string;
   "truncate-sources"?: string,
   "blogger-followers"?: string[],
   "hashtag-likers-top"?: string[],
-  "unfollow-non-followers"?: string,
-  "unfollow-skip-limit"?: string,
+  "unfollow-non-followers"?: string | number,
+  "unfollow-skip-limit"?: string | number,
   "working-hours"?: string[],
 };
 
@@ -376,7 +378,7 @@ export type SessionProfile = {
   following: number
 }
 
-export type ConfigNames = 'config.yml' | 'config2.yml' | 'config3.yml';
+export type ConfigNames = 'config.yml' | 'config2.yml' | 'unfollow.yml';
 
 export const SessionProfileSkeleton: SessionProfile = {
   posts: 0,

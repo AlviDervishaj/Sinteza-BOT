@@ -19,18 +19,22 @@ import axios from "axios";
 // Components
 import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
-import { Snackbar } from "../Snackbar";
 import { URLcondition } from "../../../utils";
 type Props = {
   processes: Process[];
+  startAgain: (_process: Process) => void;
+  removeProcess: (_username: string) => void;
+  handleStop: (_username: string) => void;
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
   processes,
+  removeProcess,
+  startAgain,
+  handleStop
 }) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isStarting, setIsStarting] = useState<boolean>(false);
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
 
   const sortedProcesses = processes.sort((a, b) => {
@@ -101,16 +105,15 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
     }
   };
 
+
   const handleChange =
     (tab: string) => (event: SyntheticEvent, isExpanded: boolean) => {
       setExpanded(isExpanded ? tab : false);
     };
 
-  console.log({ acc: processes });
-
   return (
     <Box sx={{ width: 9 / 10, margin: "0 auto" }}>
-      {sortedProcesses.map((process, index) => (
+      {sortedProcesses.map((process: Process, index: number) => (
         <A
           expanded={
             expanded ===
@@ -156,21 +159,17 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                         variant="outlined"
                         color="info"
                         key={process.username}
-                        disabled={isStarting}
+                        onClick={() => startAgain(process)}
                       >
-                        {isStarting ? (
-                          <CircularProgress color="inherit" size={25} />
-                        ) : (
-                          "Start Bot"
-                        )}
+                        Start Again
                       </Button>
                     </span>
                   </Tooltip>
-                  {/* <ChangeBotConfig process={process} /> */}
                   <Tooltip title="Remove bot from pool." arrow>
                     <Button
                       variant="outlined"
                       color="error"
+                      onClick={() => removeProcess(process.username)}
                     >
                       Remove
                     </Button>
@@ -178,42 +177,35 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                 </>
               ) : (
                 <>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                  >
-                    {process.scheduled ? "Remove Schedule" : "Stop"}
-                  </Button>
+                  <Tooltip title="Stop bot" arrow>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleStop(process.username)}
+                    >
+                      {process.scheduled ? "Remove Schedule" : "Stop"}
+                    </Button>
+                  </Tooltip>
                 </>
               )}
-              <Snackbar
-                description={`Previewing device that is running for ${process.username}`}
-                title={`Preview ${process.device.name}`}
-                icon="info"
-                variant="contained"
-                color="primary"
-                text={
-                  isLoading ? (
-                    <CircularProgress color="inherit" size={25} />
-                  ) : (
-                    "Preview"
-                  )
-                }
-                disabled={isLoading}
-                key={`${process.device.id} ${process.username}`}
-                about="Preview Device"
-                aria-label="Preview Device"
-                type="custom"
-                onClick={(event) => handleDevicePreview(event, process)}
-                tooltip="Open Preview"
-                customEventHandler={() => {
-                  return;
-                }}
-              />
+              <Tooltip title="Preview device" arrow>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  key={`${process.device.id} ${process.username}`}
+                  onClick={(event) => handleDevicePreview(event, process)}
+                >{
+                    isLoading ? (
+                      <CircularProgress color="inherit" size={25} />
+                    ) : (
+                      "Preview"
+                    )
+                  }</Button>
+              </Tooltip>
             </Box>
           </AccordionDetails>
-        </A>
+        </A >
       ))}
-    </Box>
+    </Box >
   );
 });

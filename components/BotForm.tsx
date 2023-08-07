@@ -30,10 +30,10 @@ import Duration from "dayjs/plugin/duration";
 import Calendar from "dayjs/plugin/calendar";
 
 // Hooks
-import { useInterval, useTimeout } from "usehooks-ts";
+import { useInterval } from "usehooks-ts";
 
 // Utils
-import { Process } from "../utils/Process";
+import { Process, ProcessSkeleton } from "../utils/Process";
 import { Device } from "../utils/Devices";
 import {
   BotFormData,
@@ -49,7 +49,8 @@ dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
 dayjs.extend(Calendar);
 
-const socket: Socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
+let socket: Socket;
+
 export const BotForm: FC = () => {
   // input changes trigger socket connection 
   const [processes, setProcesses] = useState<Process[]>([]);
@@ -222,30 +223,6 @@ export const BotForm: FC = () => {
     }
   };
 
-  useTimeout(() => {
-    socket.on<EmitTypes>("start-bot-checks-message", (data: string): void => {
-      if (data.trim() !== "") {
-        notify(data, "error");
-        return;
-      }
-    })
-    socket.on<EmitTypes>("start-bot-message", (data: string): void => {
-      console.log({ botMessage: data });
-    })
-
-    socket.on<EmitTypes>("create-process-message", (data: string | Process): void => {
-      if (typeof data === "string") {
-        notify(data.replace("[ERROR]", ""), "error");
-        return;
-      }
-      else {
-        console.log({ data });
-        return;
-      }
-    });
-
-  }, 300);
-
   // schedule Bot start
   const scheduleBot = async (result: number, _isScheduled: Dayjs): Promise<void> => {
     notify(
@@ -328,17 +305,6 @@ export const BotForm: FC = () => {
       setAlreadyCalled(false);
     }
   };
-  socket.on<EmitTypes>("get-processes-message", (result: string | Process[]): void => {
-    if (typeof result === "string") {
-      console.log(result);
-      return;
-    }
-    else {
-      setProcesses(result);
-      return;
-    }
-  });
-
   function createProcess(data: {
     formData: BotFormData,
     membership: "FREE" | "PREMIUM",
@@ -350,41 +316,93 @@ export const BotForm: FC = () => {
     socket.emit<EventTypes>("create-process", data);
   }
 
-  socket.on<EmitTypes>("get-devices-message", (data: DeviceSkeleton[]): void => {
-    logData(`[INFO] ${data.length} devices connected.`)
-    // convert to Device class
-    if (data.length <= 0) { setDevices([]); return; }
-    let temp: Device[] = [];
-    data.forEach((_device: DeviceSkeleton) => {
-      if (temp.find((_d: Device) => _d.id === _device._id)) return;
-      else {
-        temp.push(new Device(_device._id, _device._name, _device._battery, _device._process));
-      }
-    });
-    setDevices(temp);
-    return;
-  });
-  socket.once<EmitTypes>("create-process-message", (data: string | Process[]) => {
-    if (typeof data === "string") {
-      console.log({ createProcessMessage: data });
-      return;
-    }
-    else {
-      notify("Bot started !", "success");
-    }
-  });
-
-  socket.on("connect", () => {
-    console.log("Connected from bot!");
-  });
 
   useEffect(() => {
-    socket.connect();
+    function handleSocketConnection() {
+
+      socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
+      socket.on<EmitTypes>("get-processes-message", (result: string | ProcessSkeleton[]): void => {
+        if (typeof result === "string") {
+          return;
+        }
+        else {
+          const proc =
+            result.length > 0
+              ? result.map((_p) => {
+                return new Process(
+                  _p._device,
+                  _p._user.username,
+                  _p._user.membership,
+                  _p._status,
+                  _p._result,
+                  _p._total,
+                  _p._following,
+                  _p._followers,
+                  _p._session,
+                  _p._config,
+                  _p._profile,
+                  _p._total_crashes,
+                  _p._scheduled,
+                  _p._jobs,
+                  _p._configFile,
+                  _p._startTime,
+                );
+              })
+              : [];
+          setProcesses(proc);
+          return;
+        }
+      });
+
+      socket.on<EmitTypes>("get-devices-message", (data: DeviceSkeleton[]): void => {
+        logData(`[INFO] ${data.length} devices connected.`)
+        // convert to Device class
+        if (data.length <= 0) { setDevices([]); return; }
+        let temp: Device[] = [];
+        data.forEach((_device: DeviceSkeleton) => {
+          if (temp.find((_d: Device) => _d.id === _device._id)) return;
+          else {
+            temp.push(new Device(_device._id, _device._name, _device._battery, _device._process));
+          }
+        });
+        setDevices(temp);
+        return;
+      });
+      socket.on<EmitTypes>("create-process-message", (data: string | Process[]) => {
+        if (typeof data === "string") {
+          return;
+        }
+        else {
+          notify("Bot started !", "success");
+        }
+      });
+
+      socket.once("connect", () => {
+        console.log("Connected to socket!");
+      });
+      socket.on<EmitTypes>("start-bot-checks-message", (data: string): void => {
+        if (data.trim() !== "") {
+          notify(data, "error");
+          return;
+        }
+      })
+      socket.on<EmitTypes>("create-processes-message", (data: string | Process): void => {
+        if (typeof data === "string") {
+          notify(data.replace("[ERROR]", ""), "error");
+          return;
+        }
+        else {
+          console.log({ data });
+          return;
+        }
+      });
+    }
+    handleSocketConnection();
     return () => {
       socket.emit("close");
       socket.disconnect();
     }
-  }, [])
+  }, [logData, notify])
 
   useInterval(() => {
     socket.emit<EventTypes>("get-processes");

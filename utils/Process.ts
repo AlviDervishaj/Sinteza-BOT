@@ -8,14 +8,13 @@ import {
   SessionProfile,
   SessionProfileSkeleton,
   Jobs,
-  ConfigNames
+  ConfigNames,
 } from "./Types";
 let id = 0;
 
 export type ProcessSkeleton = {
   _device: { id: string, name: string, process: { username: string, configFile: string } | null, battery: string, },
   _scheduled: string | false
-  _battery: string,
   _result: string,
   _config: SessionConfig,
   _total_crashes: number,
@@ -30,15 +29,14 @@ export type ProcessSkeleton = {
   _session: ConfigRowsSkeleton;
   _profile: SessionProfile;
   _jobs: Jobs;
+  _pid: string;
   _configFile: ConfigNames;
   _startTime: number;
-
-
 }
+
 export class Process {
   private _device: { id: string, name: string, process: { username: string, configFile: string } | null, battery: string };
   private _scheduled: false | string;
-  private _battery: string;
   private _result: string;
   private _total: number;
   private _followers: number;
@@ -55,9 +53,10 @@ export class Process {
   private _jobs: Jobs = ['follow'];
   private _configFile: ConfigNames = "config.yml";
   private _startTime: number;
+  private _pid: string;
 
   constructor(
-    device: { id: string, name: string, battery: string },
+    device: {id: string, battery: string, process: {username: string, configFile: string} | null, name: string},
     username: string,
     membership: "PREMIUM" | "FREE",
     status: "RUNNING" | "WAITING" | "STOPPED" | "FINISHED",
@@ -69,7 +68,6 @@ export class Process {
     profile: SessionProfile = SessionProfileSkeleton,
     _total_crashes: number = 0,
     _scheduled: false | string = false,
-    _battery: string,
     _jobsThisSession: Jobs = ['follow'],
     _configFile: ConfigNames = "config.yml",
     _startTime: number = Date.now()
@@ -89,18 +87,26 @@ export class Process {
     this._profile = profile;
     this._session = session ? session : ConfigRows;
     this._scheduled = _scheduled;
-    this._battery = _battery;
     this._jobs = _jobsThisSession;
     this._configFile = _configFile;
     this._startTime = _startTime;
+    this._pid = "";
     id++;
+  }
+
+  get pid() {
+    return this._pid;
+  }
+
+  set pid(newPid: string) {
+    this._pid = newPid;
+    return;
   }
 
   get device() {
     return this._device;
   }
   set device(device: { id: string, name: string, battery: string }) {
-
     this._device = { id: device.id, name: device.name, battery: device.battery, process: { username: this.username, configFile: this.configFile } };
     return;
   }
@@ -128,15 +134,6 @@ export class Process {
   }
   set jobs(newJobs: Jobs) {
     this._jobs = newJobs;
-    return;
-  }
-
-  get battery() {
-    return this._battery;
-  }
-
-  set battery(battery: string) {
-    this._battery = battery;
     return;
   }
 
@@ -245,4 +242,4 @@ export class Process {
     this._result = result;
     return;
   }
-}
+} 

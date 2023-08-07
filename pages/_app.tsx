@@ -7,14 +7,13 @@ import "@fontsource/roboto/700.css";
 // React & Next Js
 import { useState, Fragment } from "react";
 import type { AppProps } from "next/app";
+import {dynamic} from "next";
 
 // Material UI
-import {
-  CssBaseline,
-  CircularProgress,
-  Box,
-  Backdrop,
-} from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
+import Backdrop from "@mui/material/Backdrop";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { createTheme, ThemeProvider } from "@mui/material/styles";

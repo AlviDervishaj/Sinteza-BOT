@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FC} from "react";
+import { FC } from "react";
 import {
   AppBar,
   Container,
@@ -14,10 +14,12 @@ export const Navigation: FC = () => {
           <Box
             sx={{
               flexGrow: 1,
-              width: "100%",
               display: "flex",
-              placeItems: "center",
-              justifyContent: "space-evenly",
+              gap: '5rem',
+              width: '100vw',
+              flexDirection: 'row',
+              justifyContent: "space-between",
+              justifyItems: "space-between",
               alignItems: "center",
             }}
           >
@@ -30,6 +32,7 @@ export const Navigation: FC = () => {
                 color: "inherit",
                 textDecoration: "none",
               }}
+              prefetch={false}
               href="/"
             >
               Dashboard
@@ -43,6 +46,21 @@ export const Navigation: FC = () => {
                 color: "inherit",
                 textDecoration: "none",
               }}
+              prefetch={false}
+              href="/addBulk"
+            >
+              Add Bot Bulk
+            </Link>
+            <Link
+              style={{
+                fontFamily: "monospace",
+                fontWeight: 700,
+                fontSize: "1.2rem",
+                letterSpacing: ".05rem",
+                color: "inherit",
+                textDecoration: "none",
+              }}
+              prefetch={false}
               href="/add"
             >
               Add Bot

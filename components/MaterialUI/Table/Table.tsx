@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, memo } from "react";
+import { useState, useMemo, memo } from "react";
 // uuid
 import { v5 as uuidv5 } from "uuid";
 import {
@@ -12,11 +12,8 @@ import {
   GridToolbarFilterButton,
 } from "@mui/x-data-grid";
 import { Box } from "@mui/material";
-
-import { io, Socket } from "socket.io-client";
-import { useEffectOnce, useInterval } from "usehooks-ts";
-import { Process, ProcessSkeleton } from "../../../utils";
-import { EmitTypes, EventTypes } from "../../../utils/Types";
+import { useEffectOnce } from "usehooks-ts";
+import { Process } from "../../../utils";
 
 // DayJs
 import dayjs from "dayjs";
@@ -27,8 +24,6 @@ import Calendar from "dayjs/plugin/calendar";
 dayjs.extend(RelativeTime);
 dayjs.extend(Duration);
 dayjs.extend(Calendar);
-
-const socket: Socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
 
 const GridToolbar = () => {
   return (
@@ -60,62 +55,8 @@ const GridToolbar = () => {
   );
 };
 
-export const ProcessesTable = memo(function Table() {
+export const ProcessesTable = memo<{ processes: Process[] }>(function Table({ processes }) {
   const [loading, setLoading] = useState<boolean>(true);
-  const [processes, setProcesses] = useState<Process[]>([]);
-
-  useEffectOnce(() => {
-    socket.emit<EventTypes>("get-processes");
-  })
-
-  // update table every  1 minute
-  useInterval(() => {
-    socket.emit<EventTypes>("get-processes");
-  }, 1000 * 60);
-
-  socket.on("connect", () => {
-    console.log("Connected Table To Socket!");
-  });
-
-  // listen for event to get processes
-  socket.on<EmitTypes>("get-processes-message", (response: ProcessSkeleton[]) => {
-    setLoading(false);
-    console.log({ response });
-    // convert to Process class
-    const proc =
-      response.length > 0
-        ? response.map((_p) => {
-          return new Process(
-            _p._device,
-            _p._user.username,
-            _p._user.membership,
-            _p._status,
-            _p._result,
-            _p._total,
-            _p._following,
-            _p._followers,
-            _p._session,
-            _p._config,
-            _p._profile,
-            _p._total_crashes,
-            _p._scheduled,
-            _p._battery,
-            _p._jobs,
-          );
-        })
-        : [];
-    setProcesses(proc);
-  });
-
-  // close connection on reload / page leave
-  useEffect(() => {
-    socket.connect()
-    return () => {
-      socket.emit("close");
-      socket.disconnect();
-    }
-  }, [])
-
   // Table Columns
   const ConfigCols: GridColDef[] = [
     {
@@ -275,7 +216,7 @@ export const ProcessesTable = memo(function Table() {
         "overview-username": process.username,
         "overview-total-crashes": process.total_crashes,
         "overview-status": process.status,
-        "overview-battery": process.battery,
+        "overview-battery": process.device.battery,
         "overview-scheduled": process.scheduled
           ? dayjs(process.scheduled).calendar()
           : "No",
@@ -355,6 +296,12 @@ export const ProcessesTable = memo(function Table() {
       ],
     },
   ];
+
+  useEffectOnce(() => {
+    setTimeout(() => {
+      setLoading(false);
+    }, 1000 * 2.5)
+  });
 
   return (
     <Box

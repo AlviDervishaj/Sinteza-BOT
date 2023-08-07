@@ -7,7 +7,6 @@ import "@fontsource/roboto/700.css";
 // React & Next Js
 import { useState, Fragment } from "react";
 import type { AppProps } from "next/app";
-import {dynamic} from "next";
 
 // Material UI
 import CssBaseline from "@mui/material/CssBaseline";

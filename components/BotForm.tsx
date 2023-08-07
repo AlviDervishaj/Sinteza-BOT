@@ -148,15 +148,11 @@ export const BotForm: FC = () => {
       logData("[INFO] Hashtag Likes Top: To be commented");
     }
     if (
-      !formData["unfollow-non-followers"] ||
-      formData["unfollow-non-followers"].trim() === ""
-    ) {
+      !formData["unfollow-non-followers"]) {
       logData("[INFO] Unfollow Non Followers: To be commented");
     }
     if (
-      !formData["unfollow-skip-limit"] ||
-      formData["unfollow-skip-limit"].trim() === ""
-    ) {
+      !formData["unfollow-skip-limit"]) {
       logData("[INFO] Unfollow Skip Limit: DEFAULT");
     }
     if (!formData["working-hours"] || formData["working-hours"].length === 0) {

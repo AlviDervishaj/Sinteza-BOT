@@ -9,9 +9,10 @@ type Props = {
   handleStop: (username: string) => void,
   removeProcess: (_username: string) => void,
   startAgain: (_process: Process) => void,
+  removeSchedule: (_username: string) => void;
 }
 
-export const ShowProcesses: FC<Props> = ({ processes, handleStop, startAgain, removeProcess }) => {
+export const ShowProcesses: FC<Props> = ({ processes, removeSchedule, handleStop, startAgain, removeProcess }) => {
   if (!processes || processes.length === 0) {
     return (
       <Box>
@@ -27,7 +28,7 @@ export const ShowProcesses: FC<Props> = ({ processes, handleStop, startAgain, re
       <Typography variant="h5" paddingBottom={"0.7rem"} paddingLeft={"0.7rem"}>
         Expanded Info
       </Typography>
-      <Accordion startAgain={startAgain} removeProcess={removeProcess} processes={processes} handleStop={handleStop} />
+      <Accordion removeSchedule={removeSchedule} startAgain={startAgain} removeProcess={removeProcess} processes={processes} handleStop={handleStop} />
     </Box>
   );
 };

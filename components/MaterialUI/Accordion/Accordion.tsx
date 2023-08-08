@@ -25,10 +25,12 @@ type Props = {
   startAgain: (_process: Process) => void;
   removeProcess: (_username: string) => void;
   handleStop: (_username: string) => void;
+  removeSchedule: (_username: string) => void;
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
   processes,
+  removeSchedule,
   removeProcess,
   startAgain,
   handleStop
@@ -181,7 +183,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                     <Button
                       variant="outlined"
                       color="error"
-                      onClick={() => handleStop(process.username)}
+                      onClick={() => process.scheduled ? removeSchedule(process.username) : handleStop(process.username)}
                     >
                       {process.scheduled ? "Remove Schedule" : "Stop"}
                     </Button>

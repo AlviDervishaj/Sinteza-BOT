@@ -51,6 +51,11 @@ export default function Home() {
 
       socket.on<EmitTypes>("stop-process-message", (data: string) => {
         notify(data, "info");
+      });
+
+      socket.on<EmitTypes>("remove-schedule-message", (result: string) => {
+        console.log({ result });
+        notify(result, "info");
       })
 
       // listen for event to get processes
@@ -96,6 +101,10 @@ export default function Home() {
 
   const handleStop = (username: string) => {
     socket.emit<EventTypes>("stop-process", username);
+  }
+
+  const removeSchedule = (username: string) => {
+    socket.emit<EventTypes>("remove-schedule", username);
   }
 
   type NotScheduledType = {
@@ -185,7 +194,7 @@ export default function Home() {
             Processes
           </Typography>
           <ProcessesTable processes={processes} />
-          <ShowProcesses processes={processes} removeProcess={removeProcessFromPool} handleStop={handleStop} startAgain={startBotAgain} />
+          <ShowProcesses removeSchedule={removeSchedule} processes={processes} removeProcess={removeProcessFromPool} handleStop={handleStop} startAgain={startBotAgain} />
         </Box>
       </Box>
     </>

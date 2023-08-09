@@ -8,6 +8,11 @@ import {
   Button,
   Tooltip,
   CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  SelectChangeEvent,
+  MenuItem
 } from "@mui/material";
 import { ExpandMore, Close } from "@mui/icons-material";
 
@@ -20,8 +25,9 @@ import axios from "axios";
 import { Process } from "../../../utils/Process";
 import { Output } from "../../Output";
 import { URLcondition } from "../../../utils";
+import { ConfigNames } from "../../../utils/Types";
 type Props = {
-  processes: Process[];
+  process: Process;
   startAgain: (_process: Process) => void;
   removeProcess: (_username: string) => void;
   handleStop: (_username: string) => void;
@@ -29,7 +35,7 @@ type Props = {
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
-  processes,
+  process,
   removeSchedule,
   removeProcess,
   startAgain,
@@ -38,16 +44,8 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
+  const [config, setConfig] = useState<ConfigNames>(process.configFile);
 
-  const sortedProcesses = processes.sort((a, b) => {
-    if (a.username < b.username) {
-      return -1;
-    }
-    if (a.username > b.username) {
-      return 1;
-    }
-    return 0;
-  });
 
   const notifyActions = (id: SnackbarKey) => (
     <>
@@ -107,6 +105,11 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
     }
   };
 
+  const handleConfigChange = (event: SelectChangeEvent) => {
+    setConfig(event.target.value as ConfigNames);
+    process.configFile = event.target.value as ConfigNames;
+  }
+
 
   const handleChange =
     (tab: string) => (event: SyntheticEvent, isExpanded: boolean) => {
@@ -114,100 +117,119 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
     };
 
   return (
-    <Box sx={{ width: 9 / 10, margin: "0 auto" }}>
-      {sortedProcesses.map((process: Process, index: number) => (
-        <A
-          expanded={
-            expanded ===
-            `${process.username} ${process.status} ${process.device}`
-          }
-          key={index}
-          onChange={handleChange(
-            `${process.username} ${process.status} ${process.device}`
-          )}
+    <A
+      expanded={
+        expanded ===
+        `${process.username} ${process.status} ${process.device}`
+      }
+      onChange={handleChange(
+        `${process.username} ${process.status} ${process.device}`
+      )}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMore sx={{ color: "#fff" }} />}
+        aria-controls="pannel-content"
+        id="pannel-header"
+        sx={{
+          backgroundColor: mapColorsToStatus(process.status),
+          color: "white",
+        }}
+      >
+        <Typography
+          sx={{
+            width: "40%",
+            flexShrink: 0,
+            letterSpacing: "0.1rem",
+            fontWeight: "bold",
+          }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMore sx={{ color: "#fff" }} />}
-            aria-controls="pannel-content"
-            id="pannel-header"
-            sx={{
-              backgroundColor: mapColorsToStatus(process.status),
-              color: "white",
-            }}
-          >
-            <Typography
-              key={`${process.username} ${index}`}
-              sx={{
-                width: "40%",
-                flexShrink: 0,
-                letterSpacing: "0.1rem",
-                fontWeight: "bold",
-              }}
-            >
-              {process.username} - {process.device.name}
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Typography variant="body1">
-              Config  - {process.configFile}
-            </Typography>
-            <Output data={process.result} />
-            <Box sx={{ display: "flex", marginTop: "1rem", columnGap: "2rem" }}>
-              {process.status !== "RUNNING" && process.status !== "WAITING" ? (
-                <>
-                  <Tooltip title="Start bot again." arrow>
-                    <span>
-                      <Button
-                        variant="outlined"
-                        color="info"
-                        key={process.username}
-                        onClick={() => startAgain(process)}
-                      >
-                        Start Again
-                      </Button>
-                    </span>
-                  </Tooltip>
-                  <Tooltip title="Remove bot from pool." arrow>
+          {process.username} - {process.device.name}
+        </Typography>
+      </AccordionSummary>
+      <AccordionDetails>
+        <Typography variant="body1">
+          Config  - {process.configFile}
+        </Typography>
+        <Output data={process.result} />
+        <Box sx={{ display: "flex", marginTop: "1rem", columnGap: "2rem" }}>
+          {process.status !== "RUNNING" && process.status !== "WAITING" ? (
+            <>
+              <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+                <Tooltip title="Start bot again." arrow>
+                  <span>
                     <Button
                       variant="outlined"
-                      color="error"
-                      onClick={() => removeProcess(process.username)}
+                      color="info"
+                      key={process.username}
+                      onClick={() => startAgain(process)}
                     >
-                      Remove
+                      Start Again
                     </Button>
-                  </Tooltip>
-                </>
-              ) : (
-                <>
-                  <Tooltip title="Stop bot" arrow>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => process.scheduled ? removeSchedule(process.username) : handleStop(process.username)}
-                    >
-                      {process.scheduled ? "Remove Schedule" : "Stop"}
-                    </Button>
-                  </Tooltip>
-                </>
-              )}
-              <Tooltip title="Preview device" arrow>
+                  </span>
+                </Tooltip>
+                <FormControl sx={{ maxWidth: 120 }} size="small">
+                  <InputLabel id="select-config-process">Config</InputLabel>
+                  <Select
+                    labelId="select-config-process"
+                    id="select-config-process-values"
+                    value={config}
+                    label="Config"
+                    onChange={(event: SelectChangeEvent) => handleConfigChange(event)}
+                  >
+                    <MenuItem value={"config.yml"}>config.yml</MenuItem>
+                    <MenuItem value={"config2.yml"}>config2.yml</MenuItem>
+                    <MenuItem value={"unfollow.yml"}>unfollow.yml</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box>
+                <Tooltip title="Remove bot from pool." arrow>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => removeProcess(process.username)}
+                  >
+                    Remove
+                  </Button>
+                </Tooltip>
+              </Box>
+            </>
+          ) : (
+            <Box>
+              <Tooltip title="Stop bot" arrow>
                 <Button
-                  variant="contained"
-                  color="primary"
-                  key={`${process.device.id} ${process.username}`}
-                  onClick={(event) => handleDevicePreview(event, process)}
-                >{
-                    isLoading ? (
-                      <CircularProgress color="inherit" size={25} />
-                    ) : (
-                      "Preview"
-                    )
-                  }</Button>
+                  variant="outlined"
+                  color="error"
+                  onClick={() => process.scheduled ? removeSchedule(process.username) : handleStop(process.username)}
+                >
+                  {process.scheduled ? "Remove Schedule" : "Stop"}
+                </Button>
               </Tooltip>
             </Box>
-          </AccordionDetails>
-        </A >
-      ))}
-    </Box >
+          )}
+          <Box>
+            <Tooltip title="Preview device" arrow>
+              <Button
+                variant="contained"
+                color="primary"
+                key={`${process.device.id} ${process.username}`}
+                onClick={(event) => handleDevicePreview(event, process)}
+              >{
+                  isLoading ? (
+                    <CircularProgress color="inherit" size={25} />
+                  ) : (
+                    "Preview"
+                  )
+                }</Button>
+            </Tooltip>
+          </Box>
+        </Box>
+        {process.status === "STOPPED" || process.status === "FINISHED" ?
+          <Typography variant="body1" color="red" sx={{ padding: '0.5rem 0 0.5rem 0' }}>
+            * Be sure to change the config file manually before starting the bot.
+          </Typography>
+          : null}
+      </AccordionDetails>
+    </A >
   );
 });

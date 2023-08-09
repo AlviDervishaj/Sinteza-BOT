@@ -39,7 +39,7 @@ const AddBulk: NextPage = () => {
           content={`${process.env.BASE_URL}/images/svg/logo-color.svg`}
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Sinteza | Add Bot</title>
+        <title>Sinteza | Add Bot Bulk</title>
       </Head>
       <BulkForm />
     </>

@@ -23,12 +23,31 @@ export const ShowProcesses: FC<Props> = ({ processes, removeSchedule, handleStop
     );
   }
 
+  const sortedProcesses = processes.sort((a, b) => {
+    if (a.username < b.username) {
+      return -1;
+    }
+    if (a.username > b.username) {
+      return 1;
+    }
+    return 0;
+  });
+
   return (
     <Box>
       <Typography variant="h5" paddingBottom={"0.7rem"} paddingLeft={"0.7rem"}>
         Expanded Info
       </Typography>
-      <Accordion removeSchedule={removeSchedule} startAgain={startAgain} removeProcess={removeProcess} processes={processes} handleStop={handleStop} />
+      <Box sx={{ width: 9 / 10, margin: "0 auto" }}>
+        {sortedProcesses.map((process: Process) => (
+          <Accordion key={process.username}
+            removeSchedule={removeSchedule}
+            startAgain={startAgain}
+            removeProcess={removeProcess}
+            process={process}
+            handleStop={handleStop} />
+        ))}
+      </Box>
     </Box>
   );
 };

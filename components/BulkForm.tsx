@@ -5,17 +5,13 @@ import { FC, useCallback, useEffect, useState } from "react";
 import {
   Button,
   Container,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Tooltip,
   TextField,
   Typography,
   Grid,
-  Select as MuiSelect
+  Box,
+  Stack,
 } from "@mui/material";
-
-import Select, { MultiValue } from "react-select";
 
 // Hooks
 import { useInterval } from "usehooks-ts";
@@ -28,235 +24,282 @@ import {
   EventTypes,
   EmitTypes,
   DeviceSkeleton,
-  ConfigNames
+  ConfigNames,
 } from "../utils/Types";
 import { io, Socket } from "socket.io-client";
 import { Output } from "./Output";
-import { debounce } from "../utils/utils";
 
-type BulkFormData = {
-  usernames: string[],
-  devices: Device[],
-  jobs: Jobs,
+export type BulkFormData = {
+  usernames: string[];
+  devices: Device[];
+  jobs: Jobs;
   config_name?: ConfigNames;
   "speed-multiplier"?: number;
-  "truncate-sources"?: string,
-  "blogger-followers"?: string[],
-  "hashtag-likers-top"?: string[],
-  "unfollow-non-followers"?: string,
-  "unfollow-skip-limit"?: string,
-  "working-hours"?: string[],
-}
+  "truncate-sources"?: string;
+  "blogger-followers"?: string[];
+  "hashtag-likers-top"?: string[];
+  "unfollow-non-followers"?: string;
+  "unfollow-skip-limit"?: string;
+  "working-hours"?: string[];
+};
 
+export type BulkWriteData = {
+  formData: BulkFormData;
+  membership: Array<"FREE" | "PREMIUM">;
+  scheduled: string | false;
+  startTime: number;
+  status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED";
+};
 let socket: Socket;
 export const BulkForm: FC = () => {
-  // input changes trigger socket connection 
   const [processes, setProcesses] = useState<Process[]>([]);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [deviceNames, setDeviceNames] = useState<{ value: string, label: string }[]>([]);
-  const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
+  const [devices, setDevices] = useState<string>("");
+  const [availableDevices, setAvailableDevices] = useState<Device[]>([]);
+  const [usernames, setUsernames] = useState<string>("");
+  const [memberships, setMemberships] = useState<string>("");
   const [data, setData] = useState<string>("");
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
-  const [formData, setFormData] = useState<BulkFormData>({
-    usernames: [],
-    devices: [],
-    jobs: ['follow'],
-    config_name: 'config.yml',
-    "speed-multiplier": 1,
-    "truncate-sources": "",
-    "blogger-followers": [""],
-    "hashtag-likers-top": [""],
-    "unfollow-non-followers": "",
-    "unfollow-skip-limit": "",
-    "working-hours": ["8.30-16.40", "18.15-22.46"],
-  });
 
   const refreshDevices = (): void => {
     socket.emit<EventTypes>("get-devices");
     return;
-  }
+  };
 
   const logData = useCallback((data: string): void => {
     setData((prev) => {
       if (prev.includes(data)) return prev;
       prev += `${data}\n`;
-      return prev
+      return prev;
+    });
+    return;
+  }, []);
+
+  const _logData = useCallback((data: string): void => {
+    setData((prev) => {
+      prev += `${data}\n`;
+      return prev;
     });
     return;
   }, []);
 
   // check form data
   const checkFormData = (): void | true => {
-    if (formData.usernames.length === 0) {
+    if (usernames.trim() === "") {
       return logData("Please enter usernames.");
     }
-    if (formData.devices.length === 0) {
-      return logData("Please select a device.");
+    if (devices.trim() === "") {
+      return logData("Please enter a device ID.");
+    }
+    if (memberships.trim() === "") {
+      return logData("Please enter a membership.");
     }
     return true;
   };
 
   const checkIfUsernameIsRunning = (_username: string): boolean => {
-    const isRunning = processes.filter(
-      (p) =>
-        p.username === _username &&
-        (p.status === "RUNNING" || p.status === "WAITING")
-    ).length > 0
+    const isRunning =
+      processes.filter(
+        (p) =>
+          p.username === _username &&
+          (p.status === "RUNNING" || p.status === "WAITING")
+      ).length > 0;
     if (isRunning) {
       logData(`${_username} is already running !`);
       return true;
+    } else return false;
+  };
+
+  function getDevices(devicesIds: Array<string>): Array<Device> {
+    const _devices = [];
+    for (const device of availableDevices) {
+      if (devicesIds.includes(device.id)) {
+        _devices.push(device);
+      }
     }
-    else return false;
+    return _devices;
   }
+
+  const checkIfDeviceIsBeingUsed = (_deviceId: string): boolean => {
+    const isRunning =
+      processes.filter(
+        (p) =>
+          p.device.id === _deviceId &&
+          (p.status === "RUNNING" || p.status === "WAITING")
+      ).length > 0;
+    if (isRunning) {
+      logData(`${_deviceId} is already running !`);
+      return true;
+    } else return false;
+  };
   const callApi = async (): Promise<void> => {
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;
-    if (formData.usernames[0].split(",").length !== formData.devices.length) {
-      logData("Please enter the same ammount of usernames and devices !");
-      return;
-    }
-    logData("[INFO] Checking if device is available...");
     // check usernames
-    formData.usernames.forEach((username: string) => {
+    const splitUsernames: string[] = usernames.split(" ");
+    const splitDevices: string[] = devices.split(" ");
+    const splitMemberships: string[] = memberships.split(" ");
+    // check length of data entered
+    if (
+      splitDevices.length !== splitUsernames.length &&
+      splitUsernames.length !== splitMemberships.length
+    ) {
+      return _logData(
+        "Please enter the same ammount of usernames, devices and memberships !"
+      );
+    }
+    // check usernames
+    _logData("[INFO] Checking if any users are running");
+    splitUsernames.forEach((username: string) => {
       if (checkIfUsernameIsRunning(username)) {
         return;
       }
     });
-    formData.devices.forEach((_device: Device) => {
-      if (_device.process) {
-        logData(`${_device.name} is in use.`);
+    // check devices
+    _logData("[INFO] Checking if device is available");
+    splitDevices.forEach((deviceId: string) => {
+      if (checkIfDeviceIsBeingUsed(deviceId)) {
         return;
       }
-    })
-    logData("[INFO] Starting bot checks... ");
-    // start bot
-    // cron job
-    const data: {
-      formData: BulkFormData,
-      membership: "FREE" | "PREMIUM",
-      jobs: Jobs,
-      scheduled: string | false,
-      startTime: number,
-      status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
-    } = {
-      formData,
-      membership,
-      jobs: ['follow'],
+    });
+    _logData("[INFO] Checking memberships");
+    splitMemberships.forEach((_membership: string) => {
+      if (_membership !== "FREE" && _membership !== "PREMIUM") {
+        _logData(`Membership value error.`);
+        _logData(`${_membership} must either be FREE or PREMIUM`);
+        return;
+      }
+    });
+    // now data is correct
+    // convert deviceId to Device
+    let _devices: Device[] = getDevices(splitDevices);
+    const data: BulkWriteData = {
+      formData: {
+        usernames: splitUsernames,
+        devices: _devices,
+        jobs: ["follow"],
+        config_name: "config.yml",
+        "speed-multiplier": 1,
+        "blogger-followers": [""],
+        "hashtag-likers-top": [""],
+        "working-hours": ["0-24"],
+      },
+      membership: splitMemberships as Array<"FREE" | "PREMIUM">,
       scheduled: false,
+      startTime: Date.now(),
       status: "RUNNING",
-      startTime: Date.now()
     };
+
     createProcesses(data);
     setAlreadyCalled(false);
+    _logData("Stared processes.");
   };
-  function createProcesses(data: {
-    formData: BulkFormData,
-    membership: "FREE" | "PREMIUM",
-    jobs: Jobs,
-    scheduled: string | false,
-    startTime: number,
-    status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
-  }) {
+  function createProcesses(data: BulkWriteData) {
     socket.emit<EventTypes>("create-processes", data);
   }
 
   useEffect(() => {
     function handleSocketConnection() {
-      socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
+      socket = io("ws://localhost:3030", {
+        autoConnect: true,
+        closeOnBeforeunload: true,
+      });
       socket.on("connect", () => {
         console.log("Connected from bot!");
       });
 
       socket.on<EmitTypes>("create-processes-message", (output: string) => {
         if (output.includes("[ERROR]")) logData(output);
-      })
+      });
 
-      socket.on<EmitTypes>("get-devices-message", (data: DeviceSkeleton[]): void => {
-        logData(`[INFO] ${data.length} devices connected.`)
-        // convert to Device class
-        if (data.length <= 0) { setDevices([]); return; }
-        let temp: Device[] = [];
-        let names: { value: string, label: string }[] = [];
-        data.forEach((_device: DeviceSkeleton) => {
-          if (temp.find((_d: Device) => _d.id === _device._id)) return;
-          else {
-            names.push({ value: _device._id, label: _device._name });
-            temp.push(new Device(_device._id, _device._name, _device._battery, _device._process));
+      socket.on<EmitTypes>(
+        "get-devices-message",
+        (data: DeviceSkeleton[]): void => {
+          logData(`[INFO] ${data.length} devices connected.`);
+          // convert to Device class
+          if (data.length <= 0) {
+            setAvailableDevices([]);
+            return;
           }
-        });
-        setDevices(temp);
-        setDeviceNames(names);
-        return;
-      });
+          let temp: Device[] = [];
+          data.forEach((_device: DeviceSkeleton) => {
+            if (temp.find((_d: Device) => _d.id === _device._id)) return;
+            else {
+              temp.push(
+                new Device(
+                  _device._id,
+                  _device._name,
+                  _device._battery,
+                  _device._process
+                )
+              );
+            }
+          });
+          setAvailableDevices(temp);
+          return;
+        }
+      );
 
-      socket.on<EmitTypes>("get-processes-message", (result: string | ProcessSkeleton[]): void => {
-        if (typeof result === "string") {
-          return;
+      socket.on<EmitTypes>(
+        "get-processes-message",
+        (result: string | ProcessSkeleton[]): void => {
+          if (typeof result === "string") {
+            return;
+          } else {
+            const proc =
+              result.length > 0
+                ? result.map((_p) => {
+                    return new Process(
+                      _p._device,
+                      _p._user.username,
+                      _p._user.membership,
+                      _p._status,
+                      _p._result,
+                      _p._total,
+                      _p._following,
+                      _p._followers,
+                      _p._session,
+                      _p._config,
+                      _p._profile,
+                      _p._total_crashes,
+                      _p._scheduled,
+                      _p._jobs,
+                      _p._configFile,
+                      _p._startTime
+                    );
+                  })
+                : [];
+            setProcesses(proc);
+            return;
+          }
         }
-        else {
-          const proc =
-            result.length > 0
-              ? result.map((_p) => {
-                return new Process(
-                  _p._device,
-                  _p._user.username,
-                  _p._user.membership,
-                  _p._status,
-                  _p._result,
-                  _p._total,
-                  _p._following,
-                  _p._followers,
-                  _p._session,
-                  _p._config,
-                  _p._profile,
-                  _p._total_crashes,
-                  _p._scheduled,
-                  _p._jobs,
-                  _p._configFile,
-                  _p._startTime,
-                );
-              })
-              : [];
-          setProcesses(proc);
-          return;
-        }
-      });
+      );
       socket.on<EmitTypes>("start-bot-checks-message", (data: string): void => {
         if (data.trim() !== "") {
           logData(data);
           return;
         }
-      })
-      socket.on<EmitTypes>("create-processes-message", (data: string | Process): void => {
-        console.log({ data });
-        return;
       });
+      socket.on<EmitTypes>(
+        "create-processes-message",
+        (data: string | Process): void => {
+          console.log({ data });
+          return;
+        }
+      );
     }
     handleSocketConnection();
     return () => {
       socket.emit("close");
       socket.disconnect();
-    }
-  }, [logData])
+    };
+  }, [logData]);
 
   useInterval(() => {
     socket.emit<EventTypes>("get-processes");
-  }, 1000 * 3)
+  }, 1000 * 3);
   useInterval(() => {
     socket.emit<EventTypes>("get-devices");
   }, 1000 * 2);
-
-  const handleMultipleDevicesSelected = debounce((data: MultiValue<{ label: string, value: string }>) => {
-    console.log({ data });
-    let temp: Device[] = [];
-    data.forEach((_d: { label: string, value: string }) => {
-      const d = devices.find((_device: Device) => _d.value === _device.id && _d.label === _device.name);
-      if (d) {
-        temp.push(d);
-      }
-    });
-    formData.devices = temp;
-  }, 500);
 
   return (
     <>
@@ -264,71 +307,49 @@ export const BulkForm: FC = () => {
         <Typography variant="h3" textAlign={"center"} margin={"2rem 0 3rem"}>
           Add a Bot Bulk
         </Typography>
-        <Grid container spacing={2} gap={4}>
-          <Grid container spacing={3}>
-            <Grid item xs={6}>
+        <Box>
+          <Stack spacing={2}>
+            <TextField
+              type="text"
+              id="usernames"
+              name="usernames"
+              required
+              label="Usernames"
+              value={usernames}
+              autoComplete="no"
+              onChange={(event) => setUsernames(event.target.value)}
+              placeholder="Enter usernames"
+            />
+            <TextField
+              type="text"
+              id="devices"
+              name="devices"
+              required
+              label="Devices"
+              value={devices}
+              autoComplete="no"
+              onChange={(event) => setDevices(event.target.value)}
+            />
+            <Box>
               <TextField
                 type="text"
-                id="usernames"
-                name="usernames"
+                id="memberships"
+                name="memberships"
                 required
-                label="Usernames"
-                value={formData.usernames}
+                fullWidth
+                label="Memberships"
+                value={memberships}
                 autoComplete="no"
-                onChange={(event) =>
-                  setFormData((previousData: BulkFormData) => ({
-                    ...previousData,
-                    usernames: event.target.value.split(" "),
-                  }))
-                }
-                placeholder="Enter usernames"
+                onChange={(event) => setMemberships(event.target.value)}
               />
-              <Typography paragraph>
-                Instagram usernames *split by space*
-              </Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <FormControl fullWidth>
-                <Select
-                  id="devices"
-                  aria-label="Select devices"
-                  isMulti
-                  required
-                  isClearable
-                  isSearchable
-                  options={deviceNames}
-                  onChange={(event: MultiValue<{ label: string, value: string }>) => handleMultipleDevicesSelected(event)}
-                />
-              </FormControl>
-              <Typography paragraph>
-                Refresh the devices by clicking the button below.
-              </Typography>
-            </Grid>
-          </Grid>
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel id="select-membership">
-                Select a membership
-              </InputLabel>
-              <MuiSelect
-                id="membership"
-                labelId="select-membership"
-                label="Select a membership"
-                required
-                value={membership}
-                onChange={(event) =>
-                  setMembership(event.target.value as "PREMIUM" | "FREE")
-                }
-              >
-                <MenuItem value="FREE">Free</MenuItem>
-                <MenuItem value="PREMIUM">Premium</MenuItem>
-              </MuiSelect>
-            </FormControl>
-            <Typography paragraph>
-              Select the membership of the client.
-            </Typography>
-          </Grid>
-          <Grid container spacing={3} sx={{ paddingBottom: '2rem' }}>
+              <Typography>* Correct values : FREE or PREMIUM</Typography>
+            </Box>
+          </Stack>
+          <Grid
+            container
+            spacing={3}
+            sx={{ paddingBottom: "2rem", margin: "0 auto" }}
+          >
             <Grid item>
               <Tooltip title="Start Bot">
                 <Button
@@ -343,13 +364,17 @@ export const BulkForm: FC = () => {
             </Grid>
             <Grid item>
               <Tooltip title="Refresh Devices">
-                <Button variant="contained" color="info" onClick={() => refreshDevices()}>
+                <Button
+                  variant="contained"
+                  color="info"
+                  onClick={() => refreshDevices()}
+                >
                   Refresh Devices
                 </Button>
               </Tooltip>
             </Grid>
           </Grid>
-        </Grid>
+        </Box>
       </Container>
       <Output data={data} />
     </>

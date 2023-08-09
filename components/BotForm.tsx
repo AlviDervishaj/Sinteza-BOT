@@ -40,7 +40,7 @@ import {
   Jobs,
   EventTypes,
   EmitTypes,
-  DeviceSkeleton
+  DeviceSkeleton,
 } from "../utils/Types";
 import { io, Socket } from "socket.io-client";
 import { Output } from "./Output";
@@ -52,7 +52,7 @@ dayjs.extend(Calendar);
 let socket: Socket;
 
 export const BotForm: FC = () => {
-  // input changes trigger socket connection 
+  // input changes trigger socket connection
   const [processes, setProcesses] = useState<Process[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
@@ -68,8 +68,8 @@ export const BotForm: FC = () => {
     username: "",
     device: new Device("", "", "", null),
     password: "",
-    jobs: ['follow'],
-    config_name: 'config.yml',
+    jobs: ["follow"],
+    config_name: "config.yml",
     "speed-multiplier": 1,
     "truncate-sources": "",
     "blogger-followers": [""],
@@ -79,26 +79,36 @@ export const BotForm: FC = () => {
     "working-hours": ["8.30-16.40", "18.15-22.46"],
   });
 
-  const notifyActions = useCallback((id: SnackbarKey): ReactNode => (
-    <>
-      <Button variant="text" color="inherit" onClick={() => closeSnackbar(id)}>
-        <Close color={"inherit"} />
-      </Button>
-    </>
-  ), [closeSnackbar]);
+  const notifyActions = useCallback(
+    (id: SnackbarKey): ReactNode => (
+      <>
+        <Button
+          variant="text"
+          color="inherit"
+          onClick={() => closeSnackbar(id)}
+        >
+          <Close color={"inherit"} />
+        </Button>
+      </>
+    ),
+    [closeSnackbar]
+  );
 
   const refreshDevices = (): void => {
     socket.emit<EventTypes>("get-devices");
     return;
-  }
+  };
 
-  const notify = useCallback((
-    message: SnackbarMessage,
-    variant: "error" | "info" | "default" | "success"
-  ): void => {
-    enqueueSnackbar(message, { variant, action: notifyActions });
-    return;
-  }, [enqueueSnackbar, notifyActions])
+  const notify = useCallback(
+    (
+      message: SnackbarMessage,
+      variant: "error" | "info" | "default" | "success"
+    ): void => {
+      enqueueSnackbar(message, { variant, action: notifyActions });
+      return;
+    },
+    [enqueueSnackbar, notifyActions]
+  );
 
   // check for schduled time
   const checkScheduledTime = (): dayjs.Dayjs | false => {
@@ -110,7 +120,7 @@ export const BotForm: FC = () => {
     setData((prev) => {
       if (prev.includes(data)) return prev;
       prev += `${data}\n`;
-      return prev
+      return prev;
     });
     return;
   }, []);
@@ -147,12 +157,10 @@ export const BotForm: FC = () => {
     ) {
       logData("[INFO] Hashtag Likes Top: To be commented");
     }
-    if (
-      !formData["unfollow-non-followers"]) {
+    if (!formData["unfollow-non-followers"]) {
       logData("[INFO] Unfollow Non Followers: To be commented");
     }
-    if (
-      !formData["unfollow-skip-limit"]) {
+    if (!formData["unfollow-skip-limit"]) {
       logData("[INFO] Unfollow Skip Limit: DEFAULT");
     }
     if (!formData["working-hours"] || formData["working-hours"].length === 0) {
@@ -170,7 +178,9 @@ export const BotForm: FC = () => {
   };
 
   // handle job options
-  const handleHashtagChecked = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleHashtagChecked = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ): void => {
     setIsHashtagChecked(event.target.checked);
     return;
   };
@@ -183,7 +193,9 @@ export const BotForm: FC = () => {
   };
 
   // hande schedule
-  const handleSchedule = (_isScheduled: dayjs.Dayjs | false): number | false => {
+  const handleSchedule = (
+    _isScheduled: dayjs.Dayjs | false
+  ): number | false => {
     if (_isScheduled !== false) {
       const startTime: number = _isScheduled.valueOf();
       const timeNow: number = dayjs().valueOf();
@@ -198,42 +210,43 @@ export const BotForm: FC = () => {
     return false;
   };
 
-  // check jobs 
+  // check jobs
   const checkJobs = (): Jobs => {
     // check if hashtags and unfollowed are checked
     if (isHashtagChecked) {
       if (isUnfollowedChecked) {
         // all options selected
         return ["hashtags", "unfollow"];
-      }
-      else {
+      } else {
         return ["hashtags", "follow"];
       }
     }
     if (isUnfollowedChecked) {
       // all options selected
       return ["unfollow"];
-    }
-    else {
+    } else {
       return ["follow"];
     }
   };
 
   // schedule Bot start
-  const scheduleBot = async (result: number, _isScheduled: Dayjs): Promise<void> => {
+  const scheduleBot = async (
+    result: number,
+    _isScheduled: Dayjs
+  ): Promise<void> => {
     notify(
       `Bot will start ${dayjs(_isScheduled.valueOf()).fromNow()} `,
       "info"
     );
     // call api to get device battery
     const data: {
-      formData: BotFormData,
-      membership: "FREE" | "PREMIUM",
-      jobs: Jobs,
-      scheduled: string | false,
-      startTime: number,
-      startsAt: number,
-      status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
+      formData: BotFormData;
+      membership: "FREE" | "PREMIUM";
+      jobs: Jobs;
+      scheduled: string | false;
+      startTime: number;
+      startsAt: number;
+      status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED";
     } = {
       formData: formData,
       membership,
@@ -241,11 +254,11 @@ export const BotForm: FC = () => {
       scheduled: _isScheduled.toString(),
       startsAt: result,
       status: "WAITING",
-      startTime: Date.now()
+      startTime: Date.now(),
     };
     socket.emit<EventTypes>("create-process", data);
     return;
-  }
+  };
 
   const checkIfUsernameIsRunning = (): boolean => {
     if (
@@ -257,9 +270,8 @@ export const BotForm: FC = () => {
     ) {
       notify("Bot is already running !", "error");
       return true;
-    }
-    else return false;
-  }
+    } else return false;
+  };
   const callApi = async (): Promise<void> => {
     const _isScheduled = checkScheduledTime();
     if (alreadyCalled) return;
@@ -283,95 +295,113 @@ export const BotForm: FC = () => {
       scheduleBot(result, _isScheduled);
     } else {
       const data: {
-        formData: BotFormData,
-        membership: "FREE" | "PREMIUM",
-        jobs: Jobs,
-        scheduled: string | false,
-        startTime: number,
-        status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
+        formData: BotFormData;
+        membership: "FREE" | "PREMIUM";
+        jobs: Jobs;
+        scheduled: string | false;
+        startTime: number;
+        status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED";
       } = {
         formData,
         membership,
         jobs: checkJobs(),
         scheduled: false,
         status: "RUNNING",
-        startTime: Date.now()
+        startTime: Date.now(),
       };
       createProcess(data);
       setAlreadyCalled(false);
     }
   };
   function createProcess(data: {
-    formData: BotFormData,
-    membership: "FREE" | "PREMIUM",
-    jobs: Jobs,
-    scheduled: string | false,
-    startTime: number,
-    status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED"
+    formData: BotFormData;
+    membership: "FREE" | "PREMIUM";
+    jobs: Jobs;
+    scheduled: string | false;
+    startTime: number;
+    status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED";
   }) {
     socket.emit<EventTypes>("create-process", data);
   }
 
-
   useEffect(() => {
     function handleSocketConnection() {
-
-      socket = io("ws://localhost:3030", { autoConnect: true, closeOnBeforeunload: true });
-      socket.on<EmitTypes>("get-processes-message", (result: string | ProcessSkeleton[]): void => {
-        if (typeof result === "string") {
-          return;
-        }
-        else {
-          const proc =
-            result.length > 0
-              ? result.map((_p) => {
-                return new Process(
-                  _p._device,
-                  _p._user.username,
-                  _p._user.membership,
-                  _p._status,
-                  _p._result,
-                  _p._total,
-                  _p._following,
-                  _p._followers,
-                  _p._session,
-                  _p._config,
-                  _p._profile,
-                  _p._total_crashes,
-                  _p._scheduled,
-                  _p._jobs,
-                  _p._configFile,
-                  _p._startTime,
-                );
-              })
-              : [];
-          setProcesses(proc);
-          return;
-        }
+      socket = io("ws://localhost:3030", {
+        autoConnect: true,
+        closeOnBeforeunload: true,
       });
-
-      socket.on<EmitTypes>("get-devices-message", (data: DeviceSkeleton[]): void => {
-        logData(`[INFO] ${data.length} devices connected.`)
-        // convert to Device class
-        if (data.length <= 0) { setDevices([]); return; }
-        let temp: Device[] = [];
-        data.forEach((_device: DeviceSkeleton) => {
-          if (temp.find((_d: Device) => _d.id === _device._id)) return;
-          else {
-            temp.push(new Device(_device._id, _device._name, _device._battery, _device._process));
+      socket.on<EmitTypes>(
+        "get-processes-message",
+        (result: string | ProcessSkeleton[]): void => {
+          if (typeof result === "string") {
+            return;
+          } else {
+            const proc =
+              result.length > 0
+                ? result.map((_p) => {
+                    return new Process(
+                      _p._device,
+                      _p._user.username,
+                      _p._user.membership,
+                      _p._status,
+                      _p._result,
+                      _p._total,
+                      _p._following,
+                      _p._followers,
+                      _p._session,
+                      _p._config,
+                      _p._profile,
+                      _p._total_crashes,
+                      _p._scheduled,
+                      _p._jobs,
+                      _p._configFile,
+                      _p._startTime
+                    );
+                  })
+                : [];
+            setProcesses(proc);
+            return;
           }
-        });
-        setDevices(temp);
-        return;
-      });
-      socket.on<EmitTypes>("create-process-message", (data: string | Process[]) => {
-        if (typeof data === "string") {
+        }
+      );
+
+      socket.on<EmitTypes>(
+        "get-devices-message",
+        (data: DeviceSkeleton[]): void => {
+          logData(`[INFO] ${data.length} devices connected.`);
+          // convert to Device class
+          if (data.length <= 0) {
+            setDevices([]);
+            return;
+          }
+          let temp: Device[] = [];
+          data.forEach((_device: DeviceSkeleton) => {
+            if (temp.find((_d: Device) => _d.id === _device._id)) return;
+            else {
+              temp.push(
+                new Device(
+                  _device._id,
+                  _device._name,
+                  _device._battery,
+                  _device._process
+                )
+              );
+            }
+          });
+          setDevices(temp);
           return;
         }
-        else {
-          notify("Bot started !", "success");
+      );
+      socket.on<EmitTypes>(
+        "create-process-message",
+        (data: string | Process[]) => {
+          if (typeof data === "string") {
+            return;
+          } else {
+            notify("Bot started !", "success");
+          }
         }
-      });
+      );
 
       socket.once("connect", () => {
         console.log("Connected to socket!");
@@ -381,31 +411,33 @@ export const BotForm: FC = () => {
           notify(data, "error");
           return;
         }
-      })
-      socket.on<EmitTypes>("create-processes-message", (data: string | Process): void => {
-        if (typeof data === "string") {
-          notify(data.replace("[ERROR]", ""), "error");
-          return;
-        }
-        else {
-          console.log({ data });
-          return;
-        }
       });
+      socket.on<EmitTypes>(
+        "create-processes-message",
+        (data: string | Process): void => {
+          if (typeof data === "string") {
+            notify(data.replace("[ERROR]", ""), "error");
+            return;
+          } else {
+            console.log({ data });
+            return;
+          }
+        }
+      );
     }
     handleSocketConnection();
     return () => {
       socket.emit("close");
       socket.disconnect();
-    }
-  }, [logData, notify])
+    };
+  }, [logData, notify]);
 
   useInterval(() => {
     socket.emit<EventTypes>("get-processes");
-  }, 1000 * 3)
+  }, 1000 * 3);
   useInterval(() => {
     socket.emit<EventTypes>("get-devices");
-  }, 1000 * 2)
+  }, 1000 * 2);
 
   return (
     <>
@@ -447,30 +479,30 @@ export const BotForm: FC = () => {
                   value={formData.device.id}
                   onChange={(event) =>
                     setFormData((previousData: BotFormData) => {
-                      return ({
+                      return {
                         // find the device by id
                         ...previousData,
                         device: devices.filter(
                           (device) => device.id === event.target.value
                         )[0],
-                      });
+                      };
                     })
                   }
                 >
                   {devices.length > 0 ? (
-                    devices.sort((a: Device, b: Device) => {
-                      if (a.name > b.name) return 1;
-                      else if (a.name === b.name) return 0;
-                      else return -1;
-                    }).map((device) => (
-                      <MenuItem key={device.id} value={device.id}>
-                        {device.name}
-                      </MenuItem>
-                    ))
+                    devices
+                      .sort((a: Device, b: Device) => {
+                        if (a.name > b.name) return 1;
+                        else if (a.name === b.name) return 0;
+                        else return -1;
+                      })
+                      .map((device) => (
+                        <MenuItem key={device.id} value={device.id}>
+                          {device.name}
+                        </MenuItem>
+                      ))
                   ) : (
-                    <MenuItem value={""}>
-                      Getting devices ...
-                    </MenuItem>
+                    <MenuItem value={""}>Getting devices ...</MenuItem>
                   )}
                 </Select>
               </FormControl>
@@ -715,7 +747,7 @@ export const BotForm: FC = () => {
               />
             </Grid>
           </Grid>
-          <Grid container spacing={3} sx={{ paddingBottom: '2rem' }}>
+          <Grid container spacing={3} sx={{ paddingBottom: "2rem" }}>
             <Grid item>
               <Tooltip title="Start Bot">
                 <Button
@@ -729,7 +761,11 @@ export const BotForm: FC = () => {
             </Grid>
             <Grid item>
               <Tooltip title="Refresh Devices">
-                <Button variant="contained" color="info" onClick={() => refreshDevices()}>
+                <Button
+                  variant="contained"
+                  color="info"
+                  onClick={() => refreshDevices()}
+                >
                   Refresh Devices
                 </Button>
               </Tooltip>

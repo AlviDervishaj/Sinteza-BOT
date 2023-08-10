@@ -69,7 +69,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   const handleDevicePreview = async (event: any, process: Process) => {
     event.preventDefault();
     setIsLoading(true);
-    const res = await axios.post(`${URLcondition}/previewDevice`, {
+    const res = await axios.post(`/api/previewDevice`, {
       deviceId: process.device.id,
     });
     if (res.status === 200) {

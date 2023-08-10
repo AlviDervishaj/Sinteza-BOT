@@ -45,7 +45,7 @@ export type BulkFormData = {
 
 export type BulkWriteData = {
   formData: BulkFormData;
-  membership: Array<"FREE" | "PREMIUM">;
+  memberships: Array<"FREE" | "PREMIUM">;
   scheduled: string | false;
   startTime: number;
   status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED";
@@ -183,7 +183,7 @@ export const BulkForm: FC = () => {
         "hashtag-likers-top": [""],
         "working-hours": ["0-24"],
       },
-      membership: splitMemberships as Array<"FREE" | "PREMIUM">,
+      memberships: splitMemberships as Array<"FREE" | "PREMIUM">,
       scheduled: false,
       startTime: Date.now(),
       status: "RUNNING",

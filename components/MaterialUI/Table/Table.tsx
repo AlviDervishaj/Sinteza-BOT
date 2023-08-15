@@ -1,7 +1,10 @@
 "use client";
 import { useState, useMemo, memo } from "react";
+
 // uuid
 import { v5 as uuidv5 } from "uuid";
+
+// Material UI
 import {
   DataGrid,
   GridColDef,
@@ -13,6 +16,8 @@ import {
 } from "@mui/x-data-grid";
 import { Box } from "@mui/material";
 import { useEffectOnce } from "usehooks-ts";
+
+// Utils
 import { Process } from "../../../utils";
 
 // DayJs
@@ -55,8 +60,9 @@ const GridToolbar = () => {
   );
 };
 
-export const ProcessesTable = memo<{ processes: Process[] }>(function Table({ processes }) {
-  const [loading, setLoading] = useState<boolean>(true);
+export const ProcessesTable = memo<{ processes: Process[] }>(function Table({
+  processes,
+}) {
   // Table Columns
   const ConfigCols: GridColDef[] = [
     {
@@ -297,12 +303,6 @@ export const ProcessesTable = memo<{ processes: Process[] }>(function Table({ pr
     },
   ];
 
-  useEffectOnce(() => {
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000 * 2.5)
-  });
-
   return (
     <Box
       sx={{
@@ -318,7 +318,6 @@ export const ProcessesTable = memo<{ processes: Process[] }>(function Table({ pr
         autoHeight
         pagination
         rows={ConfigRows}
-        loading={loading}
         columns={ConfigCols}
         checkboxSelection
         disableRowSelectionOnClick
@@ -330,7 +329,9 @@ export const ProcessesTable = memo<{ processes: Process[] }>(function Table({ pr
             quickFilterProps: { debounceMs: 500 },
           },
         }}
+        pageSizeOptions={[5, 10, 25, 50, 100]}
         initialState={{
+          pagination: { paginationModel: { pageSize: 5 } },
           sorting: {
             sortModel: [{ field: "overview-username", sort: "asc" }],
           },

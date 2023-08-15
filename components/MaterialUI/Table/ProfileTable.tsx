@@ -1,4 +1,7 @@
+// React & Next Js
 import { FC, useEffect } from "react";
+
+// Material UI
 import {
   Box,
   Typography,
@@ -8,32 +11,21 @@ import {
   TableCell,
   TableBody,
 } from "@mui/material";
+
+// Utils
 import { Process } from "../../../utils/Process";
 
 type Props = {
   process: Process;
-  header: string;
-  mutateProcessConfig: (process: Process) => void;
-  mutateProcessProfile: (process: Process) => void;
-  label: string;
-  getSession: (process: Process) => void;
 };
 
-export const ProfileTable: FC<Props> = ({
-  process,
-  getSession,
-  header,
-  label,
-}) => {
-  useEffect(() => {
-    getSession(process);
-  }, [getSession, process]);
+export const ProfileTable: FC<Props> = ({ process }) => {
   return (
     <Box sx={{ margin: 1 }}>
       <Typography variant="h6" gutterBottom component="div">
-        {header}
+        {process.username} Profile
       </Typography>
-      <Table size="small" aria-label={label}>
+      <Table size="small" aria-label={`${process.username}-config`}>
         <TableHead>
           <TableRow>
             <TableCell>Key</TableCell>

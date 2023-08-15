@@ -1,11 +1,7 @@
+"use client";
 import Link from "next/link";
 import { FC } from "react";
-import {
-  AppBar,
-  Container,
-  Toolbar,
-  Box,
-} from "@mui/material";
+import { AppBar, Container, Toolbar, Box } from "@mui/material";
 export const Navigation: FC = () => {
   return (
     <AppBar position="static" color="primary">
@@ -15,9 +11,9 @@ export const Navigation: FC = () => {
             sx={{
               flexGrow: 1,
               display: "flex",
-              gap: '5rem',
-              width: '100vw',
-              flexDirection: 'row',
+              gap: "5rem",
+              width: "100vw",
+              flexDirection: "row",
               justifyContent: "space-between",
               justifyItems: "space-between",
               alignItems: "center",
@@ -25,42 +21,36 @@ export const Navigation: FC = () => {
           >
             <Link
               style={{
-                fontFamily: "monospace",
                 fontWeight: 700,
                 fontSize: "1.2rem",
-                letterSpacing: ".05rem",
+                letterSpacing: ".1rem",
                 color: "inherit",
                 textDecoration: "none",
               }}
-              prefetch={false}
               href="/"
             >
               Dashboard
             </Link>
             <Link
               style={{
-                fontFamily: "monospace",
                 fontWeight: 700,
                 fontSize: "1.2rem",
-                letterSpacing: ".05rem",
+                letterSpacing: ".1rem",
                 color: "inherit",
                 textDecoration: "none",
               }}
-              prefetch={false}
               href="/addBulk"
             >
               Add Bot Bulk
             </Link>
             <Link
               style={{
-                fontFamily: "monospace",
                 fontWeight: 700,
                 fontSize: "1.2rem",
-                letterSpacing: ".05rem",
+                letterSpacing: ".1rem",
                 color: "inherit",
                 textDecoration: "none",
               }}
-              prefetch={false}
               href="/add"
             >
               Add Bot

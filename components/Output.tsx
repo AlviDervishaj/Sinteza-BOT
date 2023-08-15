@@ -1,3 +1,4 @@
+"use client";
 import { Box, Typography } from "@mui/material";
 import { FC, useRef, useEffect } from "react";
 

@@ -1,4 +1,8 @@
+"use client";
+// React & NextJs
 import { useState, SyntheticEvent, FC, memo } from "react";
+import dynamic from "next/dynamic";
+// Material UI
 import {
   Typography,
   AccordionSummary,
@@ -12,22 +16,29 @@ import {
   InputLabel,
   Select,
   SelectChangeEvent,
-  MenuItem
+  MenuItem,
 } from "@mui/material";
 import { ExpandMore, Close } from "@mui/icons-material";
 
+// Feedback
 import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
 
 // Axios
 import axios from "axios";
 
-// Components
+// Utils
 import { Process } from "../../../utils/Process";
-import { Output } from "../../Output";
 import { URLcondition } from "../../../utils";
 import { ConfigNames } from "../../../utils/Types";
+
+// Components
+const LazyOutput = dynamic(() =>
+  import("../../Output").then((mod) => mod.Output)
+);
+
 type Props = {
   process: Process;
+  isKilling: boolean;
   startAgain: (_process: Process) => void;
   removeProcess: (_username: string) => void;
   handleStop: (_username: string) => void;
@@ -39,13 +50,13 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   removeSchedule,
   removeProcess,
   startAgain,
-  handleStop
+  handleStop,
+  isKilling,
 }) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
   const [config, setConfig] = useState<ConfigNames>(process.configFile);
-
 
   const notifyActions = (id: SnackbarKey) => (
     <>
@@ -69,7 +80,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   const handleDevicePreview = async (event: any, process: Process) => {
     event.preventDefault();
     setIsLoading(true);
-    const res = await axios.post(`${URLcondition}/previewDevice`, {
+    const res = await axios.post(`/api/previewDevice`, {
       deviceId: process.device.id,
     });
     if (res.status === 200) {
@@ -108,8 +119,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   const handleConfigChange = (event: SelectChangeEvent) => {
     setConfig(event.target.value as ConfigNames);
     process.configFile = event.target.value as ConfigNames;
-  }
-
+  };
 
   const handleChange =
     (tab: string) => (event: SyntheticEvent, isExpanded: boolean) => {
@@ -119,8 +129,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   return (
     <A
       expanded={
-        expanded ===
-        `${process.username} ${process.status} ${process.device}`
+        expanded === `${process.username} ${process.status} ${process.device}`
       }
       onChange={handleChange(
         `${process.username} ${process.status} ${process.device}`
@@ -147,14 +156,12 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
         </Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Typography variant="body1">
-          Config  - {process.configFile}
-        </Typography>
-        <Output data={process.result} />
+        <Typography variant="body1">Config - {process.configFile}</Typography>
+        <LazyOutput data={process.result} />
         <Box sx={{ display: "flex", marginTop: "1rem", columnGap: "2rem" }}>
           {process.status !== "RUNNING" && process.status !== "WAITING" ? (
             <>
-              <Box sx={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+              <Box sx={{ display: "flex", flexDirection: "row", gap: "1rem" }}>
                 <Tooltip title="Start bot again." arrow>
                   <span>
                     <Button
@@ -174,7 +181,9 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                     id="select-config-process-values"
                     value={config}
                     label="Config"
-                    onChange={(event: SelectChangeEvent) => handleConfigChange(event)}
+                    onChange={(event: SelectChangeEvent) =>
+                      handleConfigChange(event)
+                    }
                   >
                     <MenuItem value={"config.yml"}>config.yml</MenuItem>
                     <MenuItem value={"config2.yml"}>config2.yml</MenuItem>
@@ -200,9 +209,19 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                 <Button
                   variant="outlined"
                   color="error"
-                  onClick={() => process.scheduled ? removeSchedule(process.username) : handleStop(process.username)}
+                  onClick={() =>
+                    process.scheduled
+                      ? removeSchedule(process.username)
+                      : handleStop(process.username)
+                  }
                 >
-                  {process.scheduled ? "Remove Schedule" : "Stop"}
+                  {isKilling ? (
+                    <CircularProgress color="error" />
+                  ) : process.scheduled ? (
+                    "Remove Schedule"
+                  ) : (
+                    "Stop"
+                  )}
                 </Button>
               </Tooltip>
             </Box>
@@ -214,22 +233,27 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                 color="primary"
                 key={`${process.device.id} ${process.username}`}
                 onClick={(event) => handleDevicePreview(event, process)}
-              >{
-                  isLoading ? (
-                    <CircularProgress color="inherit" size={25} />
-                  ) : (
-                    "Preview"
-                  )
-                }</Button>
+              >
+                {isLoading ? (
+                  <CircularProgress color="inherit" size={25} />
+                ) : (
+                  "Preview"
+                )}
+              </Button>
             </Tooltip>
           </Box>
         </Box>
-        {process.status === "STOPPED" || process.status === "FINISHED" ?
-          <Typography variant="body1" color="red" sx={{ padding: '0.5rem 0 0.5rem 0' }}>
-            * Be sure to change the config file manually before starting the bot.
+        {process.status === "STOPPED" || process.status === "FINISHED" ? (
+          <Typography
+            variant="body1"
+            color="red"
+            sx={{ padding: "0.5rem 0 0.5rem 0" }}
+          >
+            * Be sure to change the config file manually before starting the
+            bot.
           </Typography>
-          : null}
+        ) : null}
       </AccordionDetails>
-    </A >
+    </A>
   );
 });

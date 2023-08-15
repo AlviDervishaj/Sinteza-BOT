@@ -1,9 +1,14 @@
-// NextJs
-import Head from "next/head";
+"use client";
+// Next Js & React
+import { Backdrop, CircularProgress, Skeleton } from "@mui/material";
 import { ReactNode, useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { Metadata } from "next";
 
 // Socket IO
 import { io, Socket } from "socket.io-client";
+
+// Custom Hooks
 import { useEffectOnce, useInterval } from "usehooks-ts";
 
 // Material UI
@@ -11,18 +16,77 @@ import { Close } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";
 
 // Utils
+import { Device } from "../utils/Devices";
 import { Process, ProcessSkeleton } from "../utils";
 import { BotFormData, EmitTypes, EventTypes, Jobs } from "../utils/Types";
 
-// Components
-import { ProcessesTable, ShowProcesses } from "../components";
+// Feedback
 import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
-import { Device } from "../utils/Devices";
 
-// Home
+// Loader
+import { GridLoader } from "react-spinners";
+import { useRouter } from "next/navigation";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context";
+import Image from "next/image";
+
+// Components
+const LazyProcessTable = dynamic(
+  () =>
+    import("../components/MaterialUI/Table/Table").then(
+      (mod) => mod.ProcessesTable
+    ),
+  {
+    loading: () => (
+      <Skeleton
+        variant="rectangular"
+        sx={{ bgcolor: "grey.200", margin: "2rem auto" }}
+        width={"95%"}
+        height={200}
+      />
+    ),
+  }
+);
+const LazyShowProcesses = dynamic(
+  () => import("../components/ShowProcesses").then((mod) => mod.ShowProcesses),
+  {
+    loading: () => (
+      <Skeleton
+        variant="rectangular"
+        sx={{ bgcolor: "grey.200", margin: "1rem auto" }}
+        width={"90%"}
+        height={60}
+      />
+    ),
+  }
+);
+// Page Metadata
+export const metadata: Metadata = {
+  title: "Sinteza | Add Bot",
+  authors: [{ name: "Sinteza", url: "" }],
+  creator: "Sinteza",
+  description: "Management website for instagram bots made for Sinteza.",
+  keywords: [
+    "sinteza",
+    "instagram",
+    "bot",
+    "robot",
+    "automate",
+    "python",
+    "typescript",
+    "nextjs",
+  ],
+  viewport: { width: "device-width", initialScale: 1 },
+};
 let socket: Socket;
-export default function Home() {
+function View() {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+  const [isKilling, setIsKilling] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const router: AppRouterInstance = useRouter();
+  // Home
   const [processes, setProcesses] = useState<Process[]>([]);
+  const [message, setMessage] = useState<string>("");
   const { closeSnackbar, enqueueSnackbar } = useSnackbar();
 
   const notifyActions = useCallback(
@@ -39,6 +103,14 @@ export default function Home() {
     ),
     [closeSnackbar]
   );
+
+  const handlePageRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      router.push("/");
+      setIsRefreshing(false);
+    }, 1000 * 1);
+  };
 
   const notify = useCallback(
     (
@@ -58,16 +130,12 @@ export default function Home() {
         closeOnBeforeunload: true,
       });
 
-      socket.once("connect", () => {
-        console.log("Connected to socket!");
-      });
-
       socket.on<EmitTypes>("stop-process-message", (data: string) => {
         notify(data, "info");
+        setIsKilling(false);
       });
 
       socket.on<EmitTypes>("remove-schedule-message", (result: string) => {
-        console.log({ result });
         notify(result, "info");
       });
 
@@ -99,6 +167,9 @@ export default function Home() {
                 })
               : [];
           setProcesses(proc);
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 1000 * 2);
         }
       );
     }
@@ -110,11 +181,21 @@ export default function Home() {
   }, [notify]);
 
   useEffectOnce(() => {
-    socket.emit<EventTypes>("get-processes");
+    setMessage("Getting devices...");
+    socket.emit<EventTypes>("get-devices-battery");
+    setTimeout(() => {
+      setMessage("Getting sessions...");
+      socket.emit<EventTypes>("get-sessions");
+      setTimeout(() => {
+        setMessage("Getting processess...");
+        socket.emit<EventTypes>("get-processes");
+      }, 1000 * 2.1);
+    }, 1000 * 2.1);
     return;
   });
 
   const handleStop = (username: string) => {
+    setIsKilling(true);
     socket.emit<EventTypes>("stop-process", username);
   };
 
@@ -132,7 +213,6 @@ export default function Home() {
     jobs: Jobs;
   };
   const startBotAgain = useCallback((_process: Process) => {
-    console.log({ _process });
     const _modified_process: NotScheduledType = {
       scheduled: false,
       startsAt: undefined,
@@ -169,65 +249,98 @@ export default function Home() {
     socket.emit<EventTypes>("remove-process", _username);
   };
 
-  // update table every 20 seconds
+  // update devices
+  useInterval(
+    () => {
+      socket.emit<EventTypes>("get-devices-battery");
+    },
+    process.env.NODE_ENV === "development" ? 1000 * 3 : 1000 * 15
+  );
+
+  // update sessions
+  useInterval(() => {
+    socket.emit<EventTypes>("get-sessions");
+  }, 1000 * 45);
+  // update processes
   useInterval(
     () => {
       socket.emit<EventTypes>("get-processes");
     },
-    process.env.NODE_ENV === "development" ? 1000 * 5 : 1000 * 20
+    process.env.NODE_ENV === "development" ? 1000 * 5 : 1000 * 15
   );
+  if (isLoading) {
+    return (
+      <Backdrop
+        sx={{
+          color: "#fff",
+          display: "flex",
+          justifyContent: "center",
+          placeContent: "center",
+          flexDirection: "column",
+          gap: "2rem",
+          zIndex: (theme: any) => theme.zIndex.drawer + 1,
+        }}
+        open={isLoading}
+      >
+        <GridLoader color="#00bbf9" loading={isLoading} margin={6} size={30} />
+        <Typography variant="h4" sx={{ paddingLeft: "2rem", color: "#fff" }}>
+          {message}
+        </Typography>
+      </Backdrop>
+    );
+  }
   return (
-    <>
-      <Head>
-        <meta charSet="utf-8" />
-        <meta name="description" content="Sinteza Description" />
-        <meta name="title" content="Sinteza " />
-        <meta
-          name="description"
-          content="A simple UI for Sinteza to start and monitor their devices."
-        />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={`${process.env.BASE_URL}`} />
-        <meta property="og:title" content="Sinteza " />
-        <meta
-          property="og:description"
-          content="A simple UI for Sinteza to start and monitor their devices."
-        />
-        <meta
-          property="og:image"
-          content={`${process.env.BASE_URL}/images/svg/logo-color.svg`}
-        />
+    <Box sx={{ margin: "0", width: "100%", height: "100%", padding: "1rem" }}>
+      {error ? (
+        <Box
+          sx={{
+            width: "100%",
+            height: "calc(100vh - 4rem)",
+            padding: "4rem 0",
+            display: "flex",
+            flexDirection: "column",
+            justifyItems: "center",
+            placeItems: "center",
+            gap: "2rem",
+            backgroundColor: "grey.200",
+          }}
+        >
+          <Image src="/danger.png" alt="Robot" width={64} height={64} />
+          {error.split("\n").map((line) => (
+            <Typography key={line} variant="h4" sx={{ paddingLeft: "2rem" }}>
+              {line}
+            </Typography>
+          ))}
 
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content={`${process.env.BASE_URL}`} />
-        <meta property="twitter:creator" content="@empty" />
-        <meta property="twitter:title" content="Sinteza " />
-        <meta
-          property="twitter:description"
-          content="A simple UI for Sinteza to start and monitor their devices."
-        />
-        <meta
-          property="twitter:image"
-          content={`${process.env.BASE_URL}/images/svg/logo-color.svg`}
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Sinteza</title>
-      </Head>
-      <Box sx={{ margin: "2rem 0", width: "100%", height: "100%" }}>
+          <Button variant="contained" color="info" onClick={handlePageRefresh}>
+            {isRefreshing === false ? (
+              "Refresh"
+            ) : (
+              <CircularProgress size={20} color="inherit" />
+            )}
+          </Button>
+        </Box>
+      ) : (
         <Box sx={{ margin: "0 auto", overflow: "auto" }}>
           <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
             Processes
           </Typography>
-          <ProcessesTable processes={processes} />
-          <ShowProcesses
+          <LazyProcessTable processes={processes} />
+          <Typography variant="h4" sx={{ paddingLeft: "2rem" }}>
+            Expanded Info
+          </Typography>
+          <LazyShowProcesses
             removeSchedule={removeSchedule}
             processes={processes}
             removeProcess={removeProcessFromPool}
             handleStop={handleStop}
             startAgain={startBotAgain}
+            isKilling={isKilling}
           />
         </Box>
-      </Box>
-    </>
+      )}
+    </Box>
   );
 }
+
+export default View;

@@ -1,5 +1,8 @@
-// React
+"use client";
+
+// React & NextJs
 import { FC, useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
 // Material UI
 import {
@@ -8,16 +11,17 @@ import {
   Tooltip,
   TextField,
   Typography,
-  Grid,
   Box,
   Stack,
+  Skeleton,
+  Backdrop,
 } from "@mui/material";
 
 // Hooks
-import { useInterval } from "usehooks-ts";
+import { useInterval, useTimeout } from "usehooks-ts";
 
 // Utils
-import { Process, ProcessSkeleton } from "../utils/Process";
+import { Process } from "../utils/Process";
 import { Device } from "../utils/Devices";
 import {
   Jobs,
@@ -26,8 +30,22 @@ import {
   DeviceSkeleton,
   ConfigNames,
 } from "../utils/Types";
+
+// Socket IO
 import { io, Socket } from "socket.io-client";
-import { Output } from "./Output";
+import { GridLoader } from "react-spinners";
+
+// Components
+const LazyOutput = dynamic(() => import("./Output").then((mod) => mod.Output), {
+  loading: () => (
+    <Skeleton
+      variant="rectangular"
+      sx={{ bgcolor: "grey.200", margin: "1rem auto" }}
+      width={"100%"}
+      height={"20rem"}
+    />
+  ),
+});
 
 export type BulkFormData = {
   usernames: string[];
@@ -59,6 +77,7 @@ export const BulkForm: FC = () => {
   const [memberships, setMemberships] = useState<string>("");
   const [data, setData] = useState<string>("");
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refreshDevices = (): void => {
     socket.emit<EventTypes>("get-devices");
@@ -171,6 +190,7 @@ export const BulkForm: FC = () => {
     });
     // now data is correct
     // convert deviceId to Device
+    setIsLoading(true);
     let _devices: Device[] = getDevices(splitDevices);
     const data: BulkWriteData = {
       formData: {
@@ -188,7 +208,6 @@ export const BulkForm: FC = () => {
       startTime: Date.now(),
       status: "RUNNING",
     };
-
     createProcesses(data);
     setAlreadyCalled(false);
     _logData("Stared processes.");
@@ -203,11 +222,9 @@ export const BulkForm: FC = () => {
         autoConnect: true,
         closeOnBeforeunload: true,
       });
-      socket.on("connect", () => {
-        console.log("Connected from bot!");
-      });
 
       socket.on<EmitTypes>("create-processes-message", (output: string) => {
+        setIsLoading(false);
         if (output.includes("[ERROR]")) logData(output);
       });
 
@@ -239,53 +256,16 @@ export const BulkForm: FC = () => {
         }
       );
 
-      socket.on<EmitTypes>(
-        "get-processes-message",
-        (result: string | ProcessSkeleton[]): void => {
-          if (typeof result === "string") {
-            return;
-          } else {
-            const proc =
-              result.length > 0
-                ? result.map((_p) => {
-                    return new Process(
-                      _p._device,
-                      _p._user.username,
-                      _p._user.membership,
-                      _p._status,
-                      _p._result,
-                      _p._total,
-                      _p._following,
-                      _p._followers,
-                      _p._session,
-                      _p._config,
-                      _p._profile,
-                      _p._total_crashes,
-                      _p._scheduled,
-                      _p._jobs,
-                      _p._configFile,
-                      _p._startTime
-                    );
-                  })
-                : [];
-            setProcesses(proc);
-            return;
-          }
-        }
-      );
       socket.on<EmitTypes>("start-bot-checks-message", (data: string): void => {
         if (data.trim() !== "") {
           logData(data);
           return;
         }
       });
-      socket.on<EmitTypes>(
-        "create-processes-message",
-        (data: string | Process): void => {
-          console.log({ data });
-          return;
-        }
-      );
+      socket.on<EmitTypes>("create-processes-message", (data: string): void => {
+        logData(data);
+        return;
+      });
     }
     handleSocketConnection();
     return () => {
@@ -294,13 +274,23 @@ export const BulkForm: FC = () => {
     };
   }, [logData]);
 
-  useInterval(() => {
-    socket.emit<EventTypes>("get-processes");
-  }, 1000 * 3);
+  useTimeout(() => {
+    setIsLoading(false);
+  }, 1000 * 2.1);
+
   useInterval(() => {
     socket.emit<EventTypes>("get-devices");
-  }, 1000 * 2);
-
+  }, 1000 * 5);
+  if (isLoading) {
+    return (
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme: any) => theme.zIndex.drawer + 1 }}
+        open={isLoading}
+      >
+        <GridLoader color="#00bbf9" loading={isLoading} margin={6} size={30} />
+      </Backdrop>
+    );
+  }
   return (
     <>
       <Container maxWidth="sm">
@@ -344,13 +334,14 @@ export const BulkForm: FC = () => {
               />
               <Typography>* Correct values : FREE or PREMIUM</Typography>
             </Box>
-          </Stack>
-          <Grid
-            container
-            spacing={3}
-            sx={{ paddingBottom: "2rem", margin: "0 auto" }}
-          >
-            <Grid item>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+                paddingBottom: "2rem",
+              }}
+            >
               <Tooltip title="Start Bot">
                 <Button
                   variant="contained"
@@ -361,8 +352,6 @@ export const BulkForm: FC = () => {
                   Start Bot
                 </Button>
               </Tooltip>
-            </Grid>
-            <Grid item>
               <Tooltip title="Refresh Devices">
                 <Button
                   variant="contained"
@@ -372,11 +361,11 @@ export const BulkForm: FC = () => {
                   Refresh Devices
                 </Button>
               </Tooltip>
-            </Grid>
-          </Grid>
+            </Box>
+          </Stack>
         </Box>
       </Container>
-      <Output data={data} />
+      <LazyOutput data={data} />
     </>
   );
 };

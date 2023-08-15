@@ -1,5 +1,7 @@
+"use client";
 // React
 import { FC, useCallback, useEffect, useState, ReactNode } from "react";
+import dynamic from "next/dynamic";
 
 // Notistack
 import { SnackbarKey, SnackbarMessage, useSnackbar } from "notistack";
@@ -19,21 +21,22 @@ import {
   FormControlLabel,
   FormGroup,
   Switch,
+  Skeleton,
+  Backdrop,
 } from "@mui/material";
+import { useTimeout } from "usehooks-ts";
+import { GridLoader } from "react-spinners";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import { Close } from "@mui/icons-material";
 
 // DayJs
 import dayjs, { Dayjs } from "dayjs";
-import RelativeTime from "dayjs/plugin/relativeTime";
-import Duration from "dayjs/plugin/duration";
-import Calendar from "dayjs/plugin/calendar";
 
 // Hooks
 import { useInterval } from "usehooks-ts";
 
 // Utils
-import { Process, ProcessSkeleton } from "../utils/Process";
+import { Process } from "../utils/Process";
 import { Device } from "../utils/Devices";
 import {
   BotFormData,
@@ -42,19 +45,28 @@ import {
   EmitTypes,
   DeviceSkeleton,
 } from "../utils/Types";
+
+// Socket IO
 import { io, Socket } from "socket.io-client";
-import { Output } from "./Output";
 
-dayjs.extend(RelativeTime);
-dayjs.extend(Duration);
-dayjs.extend(Calendar);
-
+// Components
+// Components
+const LazyOutput = dynamic(() => import("./Output").then((mod) => mod.Output), {
+  loading: () => (
+    <Skeleton
+      variant="rectangular"
+      sx={{ bgcolor: "grey.200", margin: "1rem auto" }}
+      width={"100%"}
+      height={"20rem"}
+    />
+  ),
+});
 let socket: Socket;
 
 export const BotForm: FC = () => {
   // input changes trigger socket connection
-  const [processes, setProcesses] = useState<Process[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [alreadyCalled, setAlreadyCalled] = useState<boolean>(false);
   const [isScheduled, setIsScheduled] = useState<boolean>(false);
   const [membership, setMembership] = useState<"PREMIUM" | "FREE">("FREE");
@@ -260,39 +272,18 @@ export const BotForm: FC = () => {
     return;
   };
 
-  const checkIfUsernameIsRunning = (): boolean => {
-    if (
-      processes.filter(
-        (p) =>
-          p.username === formData.username &&
-          (p.status === "RUNNING" || p.status === "WAITING")
-      ).length > 0
-    ) {
-      notify("Bot is already running !", "error");
-      return true;
-    } else return false;
-  };
   const callApi = async (): Promise<void> => {
     const _isScheduled = checkScheduledTime();
     if (alreadyCalled) return;
     if (checkFormData() !== true) return;
     setAlreadyCalled(true);
     logData("[INFO] Checking if device is available...");
-    // get device
-    const device = formData.device;
-    if (checkIfUsernameIsRunning()) {
-      return;
-    }
-    if (device.process) {
-      notify("Device is in use.", "error");
-      return;
-    }
+    setIsLoading(true);
     logData("[INFO] Starting bot checks... ");
-    // start bot
-    // cron job
     const result = handleSchedule(_isScheduled);
     if (result !== false && _isScheduled !== false) {
       scheduleBot(result, _isScheduled);
+      setIsLoading(false);
     } else {
       const data: {
         formData: BotFormData;
@@ -309,20 +300,9 @@ export const BotForm: FC = () => {
         status: "RUNNING",
         startTime: Date.now(),
       };
-      createProcess(data);
-      setAlreadyCalled(false);
+      socket.emit<EventTypes>("create-process", data);
     }
   };
-  function createProcess(data: {
-    formData: BotFormData;
-    membership: "FREE" | "PREMIUM";
-    jobs: Jobs;
-    scheduled: string | false;
-    startTime: number;
-    status: "RUNNING" | "WAITING" | "FINISHED" | "STOPPED";
-  }) {
-    socket.emit<EventTypes>("create-process", data);
-  }
 
   useEffect(() => {
     function handleSocketConnection() {
@@ -330,40 +310,6 @@ export const BotForm: FC = () => {
         autoConnect: true,
         closeOnBeforeunload: true,
       });
-      socket.on<EmitTypes>(
-        "get-processes-message",
-        (result: string | ProcessSkeleton[]): void => {
-          if (typeof result === "string") {
-            return;
-          } else {
-            const proc =
-              result.length > 0
-                ? result.map((_p) => {
-                    return new Process(
-                      _p._device,
-                      _p._user.username,
-                      _p._user.membership,
-                      _p._status,
-                      _p._result,
-                      _p._total,
-                      _p._following,
-                      _p._followers,
-                      _p._session,
-                      _p._config,
-                      _p._profile,
-                      _p._total_crashes,
-                      _p._scheduled,
-                      _p._jobs,
-                      _p._configFile,
-                      _p._startTime
-                    );
-                  })
-                : [];
-            setProcesses(proc);
-            return;
-          }
-        }
-      );
 
       socket.on<EmitTypes>(
         "get-devices-message",
@@ -392,6 +338,15 @@ export const BotForm: FC = () => {
           return;
         }
       );
+      socket.on<EmitTypes>("create-process-message", (data: string) => {
+        setTimeout(() => {
+          if (data.includes("[ERROR]")) {
+            notify(data, "error");
+          } else notify(data, "info");
+          setIsLoading(false);
+          setAlreadyCalled(false);
+        }, 1000 * 1.3);
+      });
       socket.on<EmitTypes>(
         "create-process-message",
         (data: string | Process[]) => {
@@ -402,28 +357,12 @@ export const BotForm: FC = () => {
           }
         }
       );
-
-      socket.once("connect", () => {
-        console.log("Connected to socket!");
-      });
       socket.on<EmitTypes>("start-bot-checks-message", (data: string): void => {
         if (data.trim() !== "") {
           notify(data, "error");
           return;
         }
       });
-      socket.on<EmitTypes>(
-        "create-processes-message",
-        (data: string | Process): void => {
-          if (typeof data === "string") {
-            notify(data.replace("[ERROR]", ""), "error");
-            return;
-          } else {
-            console.log({ data });
-            return;
-          }
-        }
-      );
     }
     handleSocketConnection();
     return () => {
@@ -432,12 +371,27 @@ export const BotForm: FC = () => {
     };
   }, [logData, notify]);
 
+  useTimeout(() => {
+    setIsLoading(false);
+  }, 1000 * 2.1);
+
   useInterval(() => {
     socket.emit<EventTypes>("get-processes");
   }, 1000 * 3);
   useInterval(() => {
     socket.emit<EventTypes>("get-devices");
   }, 1000 * 2);
+
+  if (isLoading) {
+    return (
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme: any) => theme.zIndex.drawer + 1 }}
+        open={isLoading}
+      >
+        <GridLoader color="#00bbf9" loading={isLoading} margin={6} size={30} />
+      </Backdrop>
+    );
+  }
 
   return (
     <>
@@ -773,7 +727,7 @@ export const BotForm: FC = () => {
           </Grid>
         </Grid>
       </Container>
-      <Output data={data} />
+      <LazyOutput data={data} />
     </>
   );
 };

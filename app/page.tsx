@@ -131,6 +131,11 @@ function View() {
       });
 
       socket.on<EmitTypes>("stop-process-message", (data: string) => {
+        if (data.includes("[ERROR]")) {
+          notify(data.replace("[ERROR]", ""), "error");
+          setIsKilling(false);
+          return;
+        }
         notify(data, "info");
         setIsKilling(false);
       });

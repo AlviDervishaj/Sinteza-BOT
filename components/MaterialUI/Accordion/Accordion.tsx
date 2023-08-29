@@ -28,7 +28,6 @@ import axios from "axios";
 
 // Utils
 import { Process } from "../../../utils/Process";
-import { URLcondition } from "../../../utils";
 import { ConfigNames } from "../../../utils/Types";
 
 // Components
@@ -43,6 +42,7 @@ type Props = {
   removeProcess: (_username: string) => void;
   handleStop: (_username: string) => void;
   removeSchedule: (_username: string) => void;
+  previewDevice: (_id: string) => void;
 };
 
 export const Accordion: FC<Props> = memo<Props>(function Accordion({
@@ -52,6 +52,7 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
   startAgain,
   handleStop,
   isKilling,
+  previewDevice
 }) {
   const [expanded, setExpanded] = useState<string | false>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -77,31 +78,6 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
     return;
   };
 
-  const handleDevicePreview = async (event: any, process: Process) => {
-    event.preventDefault();
-    setIsLoading(true);
-    const res = await axios.post(`/api/previewDevice`, {
-      deviceId: process.device.id,
-    });
-    if (res.status === 200) {
-      if (
-        res.data.includes(
-          `adb: error: failed to get feature set: device '${process.device.id}' not found`
-        )
-      ) {
-        notify("Device might be offline.", "error");
-        setIsLoading(false);
-        return;
-      }
-      // toggle
-      setIsLoading(false);
-      return;
-    } else {
-      notify("Something unexpected happend", "error");
-      setIsLoading(false);
-      return;
-    }
-  };
 
   const mapColorsToStatus = (status: string) => {
     switch (status) {
@@ -232,13 +208,9 @@ export const Accordion: FC<Props> = memo<Props>(function Accordion({
                 variant="contained"
                 color="primary"
                 key={`${process.device.id} ${process.username}`}
-                onClick={(event) => handleDevicePreview(event, process)}
+                onClick={(event) => previewDevice(process.device.id)}
               >
-                {isLoading ? (
-                  <CircularProgress color="inherit" size={25} />
-                ) : (
-                  "Preview"
-                )}
+                Preview
               </Button>
             </Tooltip>
           </Box>

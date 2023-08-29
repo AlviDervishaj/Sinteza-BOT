@@ -12,6 +12,7 @@ const LazyAccordion = dynamic(() =>
 );
 type Props = {
   processes: Process[];
+  previewDevice: (_id: string) => void;
   handleStop: (username: string) => void;
   removeProcess: (_username: string) => void;
   startAgain: (_process: Process) => void;
@@ -23,6 +24,7 @@ export const ShowProcesses: FC<Props> = ({
   processes,
   removeSchedule,
   handleStop,
+  previewDevice,
   startAgain,
   removeProcess,
   isKilling,
@@ -59,6 +61,7 @@ export const ShowProcesses: FC<Props> = ({
           key={process.username}
           removeSchedule={removeSchedule}
           startAgain={startAgain}
+          previewDevice={previewDevice}
           removeProcess={removeProcess}
           process={process}
           handleStop={handleStop}

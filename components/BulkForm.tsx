@@ -209,8 +209,6 @@ export const BulkForm: FC = () => {
       status: "RUNNING",
     };
     createProcesses(data);
-    setAlreadyCalled(false);
-    _logData("Stared processes.");
   };
   function createProcesses(data: BulkWriteData) {
     socket.emit<EventTypes>("create-processes", data);
@@ -225,7 +223,13 @@ export const BulkForm: FC = () => {
 
       socket.on<EmitTypes>("create-processes-message", (output: string) => {
         setIsLoading(false);
-        if (output.includes("[ERROR]")) logData(output);
+        if (output.includes("[ERROR]")) {
+          setAlreadyCalled(false);
+          logData(output);
+          return;
+        };
+        _logData("Stared processes.");
+        setAlreadyCalled(false);
       });
 
       socket.on<EmitTypes>(

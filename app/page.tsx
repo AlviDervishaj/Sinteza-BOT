@@ -254,6 +254,11 @@ function View() {
     socket.emit<EventTypes>("remove-process", _username);
   };
 
+  const previewDevice = (_id: string) => {
+    socket.emit<EventTypes>("preview-device", _id);
+    return;
+  }
+
   // update devices
   useInterval(
     () => {
@@ -335,6 +340,7 @@ function View() {
             Expanded Info
           </Typography>
           <LazyShowProcesses
+            previewDevice={previewDevice}
             removeSchedule={removeSchedule}
             processes={processes}
             removeProcess={removeProcessFromPool}

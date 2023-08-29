@@ -228,7 +228,7 @@ export const BulkForm: FC = () => {
           logData(output);
           return;
         };
-        _logData("Stared processes.");
+        logData("Stared processes.");
         setAlreadyCalled(false);
       });
 
